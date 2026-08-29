@@ -68,7 +68,7 @@ public class AuthService {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "phone.number.already.registered");
         }
 
-        User user = User.builder()
+        UserEntity user = UserEntity.builder()
                 .id(UUID.randomUUID())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -108,7 +108,7 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword())
         );
 
-        User user = userRepository.findByIdentifier(request.getIdentifier())
+        UserEntity user = userRepository.findByIdentifier(request.getIdentifier())
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
 
         if (user.getStatus() == UserStatus.BLOCKED) {
@@ -128,7 +128,7 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-        SessionEntity session = Session.builder()
+        SessionEntity session = SessionEntity.builder()
                 .id(UUID.randomUUID())
                 .userId(user.getId())
                 .token(refreshToken)
@@ -179,7 +179,7 @@ public class AuthService {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_UNAUTHORIZED, "refresh.token.expired");
         }
 
-        User user = userRepository.findById(session.getUserId())
+        UserEntity user = userRepository.findById(session.getUserId())
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getId().toString());
@@ -255,7 +255,7 @@ public class AuthService {
      * @throws SmartRoadException if user not found
      */
     public UserResponse getCurrentUser(UUID userId) throws SmartRoadException {
-        User user = userRepository.findById(userId)
+        UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
 
         return mapToUserResponse(user);
@@ -271,7 +271,7 @@ public class AuthService {
      */
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) throws SmartRoadException {
-        User user = userRepository.findByEmailId(request.getEmail())
+        UserEntity user = userRepository.findByEmailId(request.getEmail())
                 .orElse(null);
 
         if (user != null) {
@@ -298,7 +298,7 @@ public class AuthService {
 
         otpService.verifyOtp(request.getEmail(), request.getOtp(), OtpFlow.PASSWORD_RESET);
 
-        User user = userRepository.findByEmailId(request.getEmail())
+        UserEntity user = userRepository.findByEmailId(request.getEmail())
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -327,7 +327,7 @@ public class AuthService {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "passwords.do.not.match");
         }
 
-        User user = userRepository.findById(userId)
+        UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
@@ -361,7 +361,7 @@ public class AuthService {
         otpService.verifyOtp(request.getEmail(), request.getOtp(), request.getFlow());
 
         if (request.getFlow() == OtpFlow.EMAIL_VERIFICATION || request.getFlow() == OtpFlow.SIGNUP_VERIFICATION) {
-            User user = userRepository.findByEmailId(request.getEmail())
+            UserEntity user = userRepository.findByEmailId(request.getEmail())
                     .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
 
             user.setEmailVerified(true);
@@ -428,7 +428,7 @@ public class AuthService {
      * @param status the status of the action (e.g., SUCCESS, FAILED)
      */
     private void createAuditLog(UUID actionForUserId, UUID requestedBy, String action, String status) throws SmartRoadException {
-        UserAuditLog auditLog = UserAuditLog.builder()
+        UserAuditLogEntity auditLog = UserAuditLogEntity.builder()
                 .id(UUID.randomUUID())
                 .userId(actionForUserId)
                 .performedBy(requestedBy)

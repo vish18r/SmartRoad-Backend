@@ -57,7 +57,7 @@ public class AppleSignInService {
         String state = generateRandomState();
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(STATE_EXPIRY_MINUTES);
 
-        OAuthStateEntity oauthState = OAuthState.builder()
+        OAuthStateEntity oauthState = OAuthStateEntity.builder()
                 .id(UUID.randomUUID())
                 .state(state)
                 .oauthType(OAuthType.APPLE)
@@ -110,7 +110,7 @@ public class AppleSignInService {
         String email = extractEmailFromAppleToken(idToken);
         String appleUserId = extractAppleUserIdFromToken(idToken);
 
-        User user = userRepository.findByEmailId(email)
+        UserEntity user = userRepository.findByEmailId(email)
                 .orElse(null);
 
         if (user == null) {
@@ -125,7 +125,7 @@ public class AppleSignInService {
         String accessToken = jwtService.generateAccessToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-        SessionEntity session = Session.builder()
+        SessionEntity session = SessionEntity.builder()
                 .id(UUID.randomUUID())
                 .userId(user.getId())
                 .token(refreshToken)
@@ -156,10 +156,10 @@ public class AppleSignInService {
      *
      * @param email the user's email from Apple
      * @param appleUserId the Apple user ID
-     * @return the created User entity
+     * @return the created UserEntity
      */
-    private User createOAuthUser(String email, String appleUserId) {
-        User user = User.builder()
+    private UserEntity createOAuthUser(String email, String appleUserId) {
+        UserEntity user = UserEntity.builder()
                 .id(UUID.randomUUID())
                 .emailId(email)
                 .oauthSigninId(appleUserId)
@@ -181,9 +181,9 @@ public class AppleSignInService {
      *
      * @param user the existing user entity
      * @param appleUserId the Apple user ID
-     * @return the updated User entity
+     * @return the updated UserEntity
      */
-    private User updateOAuthUser(User user, String appleUserId) {
+    private UserEntity updateOAuthUser(UserEntity user, String appleUserId) {
         user.setOAuthSigninId(appleUserId);
         user.setOAuthType(OAuthType.APPLE);
         user.setEmailVerified(true);
@@ -214,7 +214,7 @@ public class AppleSignInService {
      * @param status the status of the action
      */
     private void createAuditLog(UUID userId, UUID performedBy, String action, String status) {
-        UserAuditLog auditLog = UserAuditLog.builder()
+        UserAuditLogEntity auditLog = UserAuditLogEntity.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .performedBy(performedBy)

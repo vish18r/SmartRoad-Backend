@@ -62,7 +62,7 @@ public class OAuth2Service {
         String state = generateRandomState();
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(STATE_EXPIRY_MINUTES);
 
-        OAuthStateEntity oauthState = OAuthState.builder()
+        OAuthStateEntity oauthState = OAuthStateEntity.builder()
                 .id(UUID.randomUUID())
                 .state(state)
                 .oauthType(oauthType)
@@ -115,7 +115,7 @@ public class OAuth2Service {
         String email = extractEmailFromCode(code, oauthType);
         String oauthSigninId = extractOAuthSigninIdFromCode(code, oauthType);
 
-        User user = userRepository.findByEmailId(email)
+        UserEntity user = userRepository.findByEmailId(email)
                 .orElse(null);
 
         if (user == null) {
@@ -130,7 +130,7 @@ public class OAuth2Service {
         String accessToken = jwtService.generateAccessToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-        SessionEntity session = Session.builder()
+        SessionEntity session = SessionEntity.builder()
                 .id(UUID.randomUUID())
                 .userId(user.getId())
                 .token(refreshToken)
@@ -162,10 +162,10 @@ public class OAuth2Service {
      * @param email the user's email from OAuth provider
      * @param oauthSigninId the OAuth provider's user ID
      * @param oauthType the OAuth provider type
-     * @return the created User entity
+     * @return the created UserEntity
      */
-    private User createOAuthUser(String email, String oauthSigninId, OAuthType oauthType) {
-        User user = User.builder()
+    private UserEntity createOAuthUser(String email, String oauthSigninId, OAuthType oauthType) {
+        UserEntity user = UserEntity.builder()
                 .id(UUID.randomUUID())
                 .emailId(email)
                 .oauthSigninId(oauthSigninId)
@@ -188,9 +188,9 @@ public class OAuth2Service {
      * @param user the existing user entity
      * @param oauthSigninId the OAuth provider's user ID
      * @param oauthType the OAuth provider type
-     * @return the updated User entity
+     * @return the updated UserEntity
      */
-    private User updateOAuthUser(User user, String oauthSigninId, OAuthType oauthType) {
+    private UserEntity updateOAuthUser(UserEntity user, String oauthSigninId, OAuthType oauthType) {
         user.setOAuthSigninId(oauthSigninId);
         user.setOAuthType(oauthType);
         user.setEmailVerified(true);
@@ -221,7 +221,7 @@ public class OAuth2Service {
      * @param status the status of the action
      */
     private void createAuditLog(UUID userId, UUID performedBy, String action, String status) {
-        UserAuditLog auditLog = UserAuditLog.builder()
+        UserAuditLogEntity auditLog = UserAuditLogEntity.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .performedBy(performedBy)

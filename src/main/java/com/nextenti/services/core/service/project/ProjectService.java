@@ -1,11 +1,165 @@
 package com.nextenti.services.core.service.project;
-import com.nextenti.services.common.exception.*;import com.nextenti.services.core.dto.project.*;import com.nextenti.services.core.service.organization.OrganizationService;import com.nextenti.services.domain.entity.ProjectEntity;import com.nextenti.services.domain.repository.ProjectRepository;import org.springframework.stereotype.Service;import org.springframework.transaction.annotation.Transactional;import java.math.BigDecimal;import java.util.*;
-@Service public class ProjectService {private final ProjectRepository projects;private final OrganizationService orgs;public ProjectService(ProjectRepository p,OrganizationService o){projects=p;orgs=o;}
-@Transactional public ProjectResponse create(UUID u,ProjectRequest r)throws SmartRoadException{orgs.requireMember(u,r.organizationId());ProjectEntity p=new ProjectEntity();p.setId(UUID.randomUUID());p.setOrganizationId(r.organizationId());p.setCreatedBy(u);p.setModifiedBy(u);apply(p,r);return map(projects.save(p));}
-@Transactional(readOnly=true)public List<ProjectResponse> list(UUID u,UUID org)throws SmartRoadException{orgs.requireMember(u,org);return projects.findByOrganizationIdAndArchivedFalse(org).stream().map(this::map).toList();}
-@Transactional(readOnly=true)public ProjectResponse get(UUID u,UUID id,UUID org)throws SmartRoadException{return map(find(u,id,org));}
-@Transactional public ProjectResponse update(UUID u,UUID id,ProjectRequest r)throws SmartRoadException{ProjectEntity p=find(u,id,r.organizationId());apply(p,r);p.setModifiedBy(u);return map(projects.save(p));}
-@Transactional public void archive(UUID u,UUID id,UUID org)throws SmartRoadException{ProjectEntity p=find(u,id,org);p.setArchived(true);p.setModifiedBy(u);projects.save(p);}
-private ProjectEntity find(UUID u,UUID id,UUID org)throws SmartRoadException{orgs.requireMember(u,org);return projects.findByIdAndOrganizationIdAndArchivedFalse(id,org).orElseThrow(()->new SmartRoadException(ApplicationLayer.SERVICE_LAYER,ErrorCodeMapping.DAO_NOT_FOUND,"project.not.found"));}
-private void apply(ProjectEntity p,ProjectRequest r){p.setClientId(r.clientId());p.setCode(r.code());p.setName(r.name());p.setDescription(r.description());p.setLocation(r.location());p.setStatus(r.status());p.setBudget(r.budget());p.setProgress(r.progress()==null?BigDecimal.ZERO:r.progress());p.setStartDate(r.startDate());p.setEndDate(r.endDate());}
-private ProjectEntityResponse map(ProjectEntity p){return new ProjectResponse(p.getId(),p.getOrganizationId(),p.getClientId(),p.getCode(),p.getName(),p.getDescription(),p.getLocation(),p.getStatus(),p.getBudget(),p.getActualCost(),p.getProgress(),p.getStartDate(),p.getEndDate(),Boolean.TRUE.equals(p.getArchived()));}}
+
+import com.nextenti.services.common.exception.ApplicationLayer;
+import com.nextenti.services.common.exception.ErrorCodeMapping;
+import com.nextenti.services.common.exception.SmartRoadException;
+import com.nextenti.services.core.dto.project.ProjectRequest;
+import com.nextenti.services.core.dto.project.ProjectResponse;
+import com.nextenti.services.core.service.organization.OrganizationService;
+import com.nextenti.services.domain.entity.ProjectEntity;
+import com.nextenti.services.domain.repository.ProjectRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Service layer for project business logic.
+ * Manages project creation, retrieval, updating, and archival operations.
+ */
+@Service
+public class ProjectService {
+
+    private final ProjectRepository projects;
+    private final OrganizationService orgs;
+
+    /**
+     * Constructs a ProjectService with required dependencies.
+     *
+     * @param p the project repository
+     * @param o the organization service
+     */
+    public ProjectService(ProjectRepository p, OrganizationService o) {
+        projects = p;
+        orgs = o;
+    }
+
+    /**
+     * Creates a new project.
+     *
+     * @param u the user UUID
+     * @param r the project request DTO
+     * @return the created project response DTO
+     * @throws SmartRoadException if user is not an organization member
+     */
+    @Transactional
+    public ProjectResponse create(UUID u, ProjectRequest r) throws SmartRoadException {
+        orgs.requireMember(u, r.organizationId());
+        ProjectEntity p = new ProjectEntity();
+        p.setId(UUID.randomUUID());
+        p.setOrganizationId(r.organizationId());
+        p.setCreatedBy(u);
+        p.setModifiedBy(u);
+        apply(p, r);
+        return map(projects.save(p));
+    }
+
+    /**
+     * Retrieves all non-archived projects for an organization.
+     *
+     * @param u the user UUID
+     * @param org the organization UUID
+     * @return list of project response DTOs
+     * @throws SmartRoadException if user is not an organization member
+     */
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> list(UUID u, UUID org) throws SmartRoadException {
+        orgs.requireMember(u, org);
+        return projects.findByOrganizationIdAndArchivedFalse(org).stream().map(this::map).toList();
+    }
+
+    /**
+     * Retrieves a specific project.
+     *
+     * @param u the user UUID
+     * @param id the project UUID
+     * @param org the organization UUID
+     * @return the project response DTO
+     * @throws SmartRoadException if project not found or user not authorized
+     */
+    @Transactional(readOnly = true)
+    public ProjectResponse get(UUID u, UUID id, UUID org) throws SmartRoadException {
+        return map(find(u, id, org));
+    }
+
+    /**
+     * Updates an existing project.
+     *
+     * @param u the user UUID
+     * @param id the project UUID
+     * @param r the project request DTO
+     * @return the updated project response DTO
+     * @throws SmartRoadException if project not found or user not authorized
+     */
+    @Transactional
+    public ProjectResponse update(UUID u, UUID id, ProjectRequest r) throws SmartRoadException {
+        ProjectEntity p = find(u, id, r.organizationId());
+        apply(p, r);
+        p.setModifiedBy(u);
+        return map(projects.save(p));
+    }
+
+    /**
+     * Archives a project (soft delete).
+     *
+     * @param u the user UUID
+     * @param id the project UUID
+     * @param org the organization UUID
+     * @throws SmartRoadException if project not found or user not authorized
+     */
+    @Transactional
+    public void archive(UUID u, UUID id, UUID org) throws SmartRoadException {
+        ProjectEntity p = find(u, id, org);
+        p.setArchived(true);
+        p.setModifiedBy(u);
+        projects.save(p);
+    }
+
+    /**
+     * Finds a project with authorization check.
+     *
+     * @param u the user UUID
+     * @param id the project UUID
+     * @param org the organization UUID
+     * @return the ProjectEntity
+     * @throws SmartRoadException if project not found or user not authorized
+     */
+    private ProjectEntity find(UUID u, UUID id, UUID org) throws SmartRoadException {
+        orgs.requireMember(u, org);
+        return projects.findByIdAndOrganizationIdAndArchivedFalse(id, org)
+                .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "project.not.found"));
+    }
+
+    /**
+     * Applies request data to project entity.
+     *
+     * @param p the project entity to update
+     * @param r the project request DTO
+     */
+    private void apply(ProjectEntity p, ProjectRequest r) {
+        p.setClientId(r.clientId());
+        p.setCode(r.code());
+        p.setName(r.name());
+        p.setDescription(r.description());
+        p.setLocation(r.location());
+        p.setStatus(r.status());
+        p.setBudget(r.budget());
+        p.setProgress(r.progress() == null ? BigDecimal.ZERO : r.progress());
+        p.setStartDate(r.startDate());
+        p.setEndDate(r.endDate());
+    }
+
+    /**
+     * Maps project entity to response DTO.
+     *
+     * @param p the project entity
+     * @return the project response DTO
+     */
+    private ProjectResponse map(ProjectEntity p) {
+        return new ProjectResponse(p.getId(), p.getOrganizationId(), p.getClientId(), p.getCode(), p.getName(),
+                p.getDescription(), p.getLocation(), p.getStatus(), p.getBudget(), p.getActualCost(), p.getProgress(),
+                p.getStartDate(), p.getEndDate(), Boolean.TRUE.equals(p.getArchived()));
+    }
+}
