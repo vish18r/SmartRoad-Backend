@@ -1,0 +1,46 @@
+-- Insert system user for bootstrap operations
+-- This user is used as the creator/modifier for initial records
+
+INSERT INTO sr_users (
+    id,
+    created_by,
+    date_created,
+    modified_by,
+    date_modified,
+    db_version,
+    country_code,
+    email_id,
+    phone_number,
+    status,
+    first_name,
+    last_name,
+    role,
+    user_type,
+    oauth_type,
+    end_date,
+    password,
+    registration_source,
+    email_verified_yn,
+    oauth_signin_id
+) VALUES (
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    NOW(),
+    '00000000-0000-0000-0000-000000000001',
+    NOW(),
+    1,
+    NULL,
+    'system@nextenti.com',
+    NULL,
+    'ACTIVE',
+    'System',
+    'User',
+    'ADMIN',
+    'SYSTEM',
+    NULL,
+    NULL,
+    '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH',
+    'SYSTEM',
+    TRUE,
+    NULL
+) ON CONFLICT (id) DO NOTHING;

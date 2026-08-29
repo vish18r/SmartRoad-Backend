@@ -1,0 +1,21 @@
+CREATE TABLE projects (
+ id UUID PRIMARY KEY, organization_id UUID NOT NULL REFERENCES organizations(id), client_id UUID REFERENCES clients(id),
+ created_by UUID NOT NULL REFERENCES sr_users(id), date_created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ modified_by UUID NOT NULL REFERENCES sr_users(id), date_modified TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, db_version INTEGER NOT NULL DEFAULT 1,
+ code VARCHAR(100), name VARCHAR(255) NOT NULL, description TEXT, location TEXT, status VARCHAR(32) NOT NULL,
+ budget NUMERIC(18,2) NOT NULL DEFAULT 0, actual_cost NUMERIC(18,2) NOT NULL DEFAULT 0, progress NUMERIC(5,2) NOT NULL DEFAULT 0,
+ start_date DATE, end_date DATE, archived BOOLEAN NOT NULL DEFAULT FALSE, CONSTRAINT uq_projects_org_code UNIQUE(organization_id, code)
+);
+CREATE INDEX idx_projects_org ON projects(organization_id) WHERE archived = FALSE;
+CREATE TABLE roads (
+ id UUID PRIMARY KEY, project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+ created_by UUID NOT NULL REFERENCES sr_users(id), date_created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ modified_by UUID NOT NULL REFERENCES sr_users(id), date_modified TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, db_version INTEGER NOT NULL DEFAULT 1,
+ name VARCHAR(255) NOT NULL, length_m NUMERIC(14,2) NOT NULL, width_m NUMERIC(10,2), thickness_mm NUMERIC(10,2), start_chainage VARCHAR(50), end_chainage VARCHAR(50), completed_length_m NUMERIC(14,2) NOT NULL DEFAULT 0
+);
+CREATE TABLE road_sections (
+ id UUID PRIMARY KEY, road_id UUID NOT NULL REFERENCES roads(id) ON DELETE CASCADE,
+ created_by UUID NOT NULL REFERENCES sr_users(id), date_created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ modified_by UUID NOT NULL REFERENCES sr_users(id), date_modified TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, db_version INTEGER NOT NULL DEFAULT 1,
+ start_chainage VARCHAR(50) NOT NULL, end_chainage VARCHAR(50) NOT NULL, length_m NUMERIC(14,2) NOT NULL, completed_length_m NUMERIC(14,2) NOT NULL DEFAULT 0
+);
