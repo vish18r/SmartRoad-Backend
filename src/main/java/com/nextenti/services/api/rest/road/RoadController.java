@@ -1,10 +1,11 @@
 package com.nextenti.services.api.rest.road;
 
-import com.nextenti.services.common.exception.NextentiException;
-import com.nextenti.services.core.dto.road.RoadRequest;
-import com.nextenti.services.core.dto.road.RoadResponse;
-import com.nextenti.services.core.dto.road.RoadSectionRequest;
-import com.nextenti.services.core.dto.road.RoadSectionResponse;
+import com.nextenti.services.api.utils.RequestUtil;
+import com.nextenti.services.common.exception.SmartRoadException;
+import com.nextenti.services.core.dto.road.RoadRequestDTO;
+import com.nextenti.services.core.dto.road.RoadResponseDTO;
+import com.nextenti.services.core.dto.road.RoadSectionRequestDTO;
+import com.nextenti.services.core.dto.road.RoadSectionResponseDTO;
 import com.nextenti.services.core.service.road.RoadService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -57,18 +58,19 @@ public class RoadController {
      * @param projectId the UUID of the project
      * @param request the road creation request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the created {@link RoadResponse}
+     * @return {@link ResponseEntity} containing the created {@link RoadResponseDTO}
      * @throws NextentiException if project not found or creation fails
      */
     @PostMapping(path = "/projects/{projectId}/roads", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> createRoad(@PathVariable UUID projectId,
-                                             @RequestBody @Valid RoadRequest request,
-                                             @RequestHeader HttpHeaders headers) throws NextentiException {
+                                             @RequestBody @Valid RoadRequestDTO request,
+                                             @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside createRoadEntity method--");
 
-        RoadResponse response = roadService.create(projectId, request);
+        UUID userId = RequestUtil.extractUserId();
+        RoadResponseDTO response = roadService.create(userId, projectId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -78,16 +80,17 @@ public class RoadController {
      *
      * @param projectId the UUID of the project
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing a list of {@link RoadResponse}
+     * @return {@link ResponseEntity} containing a list of {@link RoadResponseDTO}
      * @throws NextentiException if project not found or retrieval fails
      */
     @GetMapping(path = "/projects/{projectId}/roads", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> listRoads(@PathVariable UUID projectId,
-                                            @RequestHeader HttpHeaders headers) throws NextentiException {
+                                            @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside listRoads method--");
 
-        List<RoadResponse> response = roadService.list(projectId);
+        UUID userId = RequestUtil.extractUserId();
+        List<RoadResponseDTO> response = roadService.list(userId, projectId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -97,16 +100,17 @@ public class RoadController {
      *
      * @param id the UUID of the road
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the {@link RoadResponse}
+     * @return {@link ResponseEntity} containing the {@link RoadResponseDTO}
      * @throws NextentiException if road not found
      */
     @GetMapping(path = "/roads/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> getRoad(@PathVariable UUID id,
-                                          @RequestHeader HttpHeaders headers) throws NextentiException {
+                                          @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside getRoadEntity method--");
 
-        RoadResponse response = roadService.get(id);
+        UUID userId = RequestUtil.extractUserId();
+        RoadResponseDTO response = roadService.get(userId, id);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -117,18 +121,19 @@ public class RoadController {
      * @param id the UUID of the road
      * @param request the road update request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the updated {@link RoadResponse}
+     * @return {@link ResponseEntity} containing the updated {@link RoadResponseDTO}
      * @throws NextentiException if road not found or update fails
      */
     @PutMapping(path = "/roads/{id}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> updateRoad(@PathVariable UUID id,
-                                             @RequestBody @Valid RoadRequest request,
-                                             @RequestHeader HttpHeaders headers) throws NextentiException {
+                                             @RequestBody @Valid RoadRequestDTO request,
+                                             @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside updateRoadEntity method--");
 
-        RoadResponse response = roadService.update(id, request);
+        UUID userId = RequestUtil.extractUserId();
+        RoadResponseDTO response = roadService.update(userId, id, request);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -144,10 +149,11 @@ public class RoadController {
     @DeleteMapping(path = "/roads/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> deleteRoad(@PathVariable UUID id,
-                                             @RequestHeader HttpHeaders headers) throws NextentiException {
+                                             @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside deleteRoadEntity method--");
 
-        roadService.delete(id);
+        UUID userId = RequestUtil.extractUserId();
+        roadService.delete(userId, id);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -158,18 +164,19 @@ public class RoadController {
      * @param roadId the UUID of the road
      * @param request the road section creation request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the created {@link RoadSectionResponse}
+     * @return {@link ResponseEntity} containing the created {@link RoadSectionResponseDTO}
      * @throws NextentiException if road not found or creation fails
      */
     @PostMapping(path = "/roads/{roadId}/sections", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> createRoadSection(@PathVariable UUID roadId,
-                                                    @RequestBody @Valid RoadSectionRequest request,
-                                                    @RequestHeader HttpHeaders headers) throws NextentiException {
+                                                    @RequestBody @Valid RoadSectionRequestDTO request,
+                                                    @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside createRoadSectionEntity method--");
 
-        RoadSectionResponse response = roadService.createSection(roadId, request);
+        UUID userId = RequestUtil.extractUserId();
+        RoadSectionResponseDTO response = roadService.createSection(userId, roadId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -179,16 +186,17 @@ public class RoadController {
      *
      * @param roadId the UUID of the road
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing a list of {@link RoadSectionResponse}
+     * @return {@link ResponseEntity} containing a list of {@link RoadSectionResponseDTO}
      * @throws NextentiException if road not found or retrieval fails
      */
     @GetMapping(path = "/roads/{roadId}/sections", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> listRoadSections(@PathVariable UUID roadId,
-                                                   @RequestHeader HttpHeaders headers) throws NextentiException {
+                                                   @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside listRoadSections method--");
 
-        List<RoadSectionResponse> response = roadService.listSections(roadId);
+        UUID userId = RequestUtil.extractUserId();
+        List<RoadSectionResponseDTO> response = roadService.listSections(userId, roadId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

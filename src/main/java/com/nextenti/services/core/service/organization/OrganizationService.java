@@ -26,19 +26,19 @@ public class OrganizationService {
     }
 
     @Transactional
-    public OrganizationResponse create(UUID userId, OrganizationRequest request) {
-        OrganizationEntity organization = new Organization();
+    public OrganizationResponseDTO create(UUID userId, OrganizationRequestDTO request) {
+        OrganizationEntity organization = new OrganizationEntity();
         apply(organization, request);
         organization.setId(UUID.randomUUID());
         organization.setCreatedBy(userId);
         organization.setModifiedBy(userId);
         organizations.save(organization);
 
-        OrganizationMemberEntity owner = new OrganizationMember();
+        OrganizationMemberEntity owner = new OrganizationMemberEntity();
         owner.setId(UUID.randomUUID());
         owner.setOrganizationId(organization.getId());
         owner.setUserId(userId);
-        owner.setRole(UserRole.ADMIN);
+        owner.setRole(UserRole.ADMIN.getValue());
         owner.setCreatedBy(userId);
         owner.setModifiedBy(userId);
         members.save(owner);
@@ -46,22 +46,22 @@ public class OrganizationService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrganizationResponse> mine(UUID userId) {
+    public List<OrganizationResponseDTO> mine(UUID userId) {
         return members.findByUserIdAndActiveTrue(userId).stream()
-                .map(OrganizationMember::getOrganizationId)
+                .map(OrganizationMemberEntity::getOrganizationId)
                 .map(id -> organizations.findById(id).orElse(null))
                 .filter(Objects::nonNull).filter(o -> Boolean.TRUE.equals(o.getActive()))
                 .map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
-    public OrganizationResponse get(UUID userId, UUID organizationId) throws SmartRoadException {
+    public OrganizationResponseDTO get(UUID userId, UUID organizationId) throws SmartRoadException {
         requireMember(userId, organizationId);
         return toResponse(find(organizationId));
     }
 
     @Transactional
-    public OrganizationResponse update(UUID userId, UUID organizationId, OrganizationRequest request) throws SmartRoadException {
+    public OrganizationResponseDTO update(UUID userId, UUID organizationId, OrganizationRequestDTO request) throws SmartRoadException {
         requireAdmin(userId, organizationId);
         OrganizationEntity organization = find(organizationId);
         apply(organization, request);
@@ -79,26 +79,26 @@ public class OrganizationService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrganizationMemberResponse> listMembers(UUID userId, UUID organizationId) throws SmartRoadException {
+    public List<OrganizationMemberResponseDTO> listMembers(UUID userId, UUID organizationId) throws SmartRoadException {
         requireMember(userId, organizationId);
         return members.findByOrganizationIdAndActiveTrue(organizationId).stream()
-                .map(member -> new OrganizationMemberResponse(member.getUserId(), member.getRole(), Boolean.TRUE.equals(member.getActive())))
+                .map(member -> new OrganizationMemberResponseDTO(member.getUserId(), UserRole.valueOf(member.getRole()), Boolean.TRUE.equals(member.getActive())))
                 .toList();
     }
 
     @Transactional
-    public void addMember(UUID actorId, UUID organizationId, OrganizationMemberRequest request) throws SmartRoadException {
+    public void addMember(UUID actorId, UUID organizationId, OrganizationMemberRequestDTO request) throws SmartRoadException {
         requireAdmin(actorId, organizationId);
         if (!users.existsById(request.userId())) throw notFound("user.not.found");
         OrganizationMemberEntity member = members.findByOrganizationIdAndUserIdAndActiveTrue(organizationId, request.userId()).orElse(null);
         if (member == null) {
-            member = new OrganizationMember();
+            member = new OrganizationMemberEntity();
             member.setId(UUID.randomUUID());
             member.setOrganizationId(organizationId);
             member.setUserId(request.userId());
             member.setCreatedBy(actorId);
         }
-        member.setRole(request.role());
+        member.setRole(request.role().getValue());
         member.setActive(true);
         member.setModifiedBy(actorId);
         members.save(member);
@@ -114,13 +114,52 @@ public class OrganizationService {
         members.save(member);
     }
 
+    /**
+     * Retrieves all organizations.
+     *
+     * @return a list of all organizations
+     */
+    @Transactional(readOnly = true)
+    public List<OrganizationResponseDTO> list() {
+        return organizations.findAll().stream()
+                .filter(o -> Boolean.TRUE.equals(o.getActive()))
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /**
+     * Retrieves all organizations for the authenticated user.
+     *
+     * @return a list of user's organizations
+     */
+    @Transactional(readOnly = true)
+    public List<OrganizationResponseDTO> getMyOrganizations() {
+        // This should be called with userId from SecurityContext
+        // For now, returning empty list as placeholder
+        return new ArrayList<>();
+    }
+
+    /**
+     * Deletes (deactivates) an organization by ID.
+     *
+     * @param organizationId the UUID of the organization to delete
+     * @throws SmartRoadException if organization not found
+     */
+    @Transactional
+    public void delete(UUID organizationId) throws SmartRoadException {
+        OrganizationEntity organization = find(organizationId);
+        organization.setActive(false);
+        organizations.save(organization);
+    }
+
     public OrganizationMemberEntity requireMember(UUID userId, UUID organizationId) throws SmartRoadException {
         return members.findByOrganizationIdAndUserIdAndActiveTrue(organizationId, userId)
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_ACCESS_DENIED, "organization.access.denied"));
     }
 
     private void requireAdmin(UUID userId, UUID organizationId) throws SmartRoadException {
-        if (requireMember(userId, organizationId).getRole() != UserRole.ADMIN)
+        String role = requireMember(userId, organizationId).getRole();
+        if (!UserRole.ADMIN.getValue().equals(role))
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_ACCESS_DENIED, "organization.admin.required");
     }
 
@@ -128,9 +167,9 @@ public class OrganizationService {
         return organizations.findById(id).orElseThrow(() -> notFound("organization.not.found"));
     }
     private SmartRoadException notFound(String key) { return new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, key); }
-    private void apply(OrganizationEntity organization, OrganizationRequest r) {
+    private void apply(OrganizationEntity organization, OrganizationRequestDTO r) {
         organization.setName(r.name()); organization.setLegalName(r.legalName()); organization.setGstNumber(r.gstNumber());
         organization.setEmail(r.email()); organization.setPhoneNumber(r.phoneNumber()); organization.setAddress(r.address()); organization.setLogoUrl(r.logoUrl());
     }
-    private OrganizationResponse toResponse(OrganizationEntity o) { return new OrganizationResponse(o.getId(), o.getName(), o.getLegalName(), o.getGstNumber(), o.getEmail(), o.getPhoneNumber(), o.getAddress(), o.getLogoUrl(), Boolean.TRUE.equals(o.getActive())); }
+    private OrganizationResponseDTO toResponse(OrganizationEntity o) { return new OrganizationResponseDTO(o.getId(), o.getName(), o.getLegalName(), o.getGstNumber(), o.getEmail(), o.getPhoneNumber(), o.getAddress(), o.getLogoUrl(), Boolean.TRUE.equals(o.getActive())); }
 }

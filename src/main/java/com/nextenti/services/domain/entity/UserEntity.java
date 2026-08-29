@@ -9,6 +9,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -21,10 +22,11 @@ import java.util.UUID;
  * @version 1.0
  */
 @Entity
-@Table(name = "nt_auth_users")
+@Table(name = "sr_users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @EqualsAndHashCode(callSuper = true)
 public class UserEntity extends SmartRoadBaseEntity {
 
@@ -40,7 +42,6 @@ public class UserEntity extends SmartRoadBaseEntity {
     @Column(name = "phone_number")
     private String phoneNumber;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "country_code")
     private String countryCode;
 

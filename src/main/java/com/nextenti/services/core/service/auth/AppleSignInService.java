@@ -2,12 +2,12 @@ package com.nextenti.services.core.service.auth;
 
 import com.nextenti.services.common.enums.OAuthType;
 import com.nextenti.services.common.enums.SessionStatus;
-import com.nextenti.services.common.enums.UserStatus;
+import com.nextenti.services.common.enums.auth.UserStatusEnum;
 import com.nextenti.services.common.exception.ApplicationLayer;
 import com.nextenti.services.common.exception.ErrorCodeMapping;
 import com.nextenti.services.common.exception.SmartRoadException;
-import com.nextenti.services.core.dto.auth.AuthResponse;
-import com.nextenti.services.core.dto.auth.UserResponse;
+import com.nextenti.services.core.dto.auth.AuthResponseDTO;
+import com.nextenti.services.core.dto.auth.UserResponseDTO;
 import com.nextenti.services.core.mapper.auth.UserMapper;
 import com.nextenti.services.domain.entity.OAuthStateEntity;
 import com.nextenti.services.domain.entity.SessionEntity;
@@ -58,13 +58,14 @@ public class AppleSignInService {
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(STATE_EXPIRY_MINUTES);
 
         OAuthStateEntity oauthState = OAuthStateEntity.builder()
-                .id(UUID.randomUUID())
                 .state(state)
                 .oauthType(OAuthType.APPLE)
                 .expiresAt(expiresAt)
-                .createdBy(SYSTEM_USER_ID)
-                .modifiedBy(SYSTEM_USER_ID)
                 .build();
+
+        oauthState.setId(UUID.randomUUID());
+        oauthState.setCreatedBy(SYSTEM_USER_ID);
+        oauthState.setModifiedBy(SYSTEM_USER_ID);
 
         oauthStateRepository.save(oauthState);
         log.info("Generated Apple Sign-In state: {}", state);
@@ -78,11 +79,11 @@ public class AppleSignInService {
      * @param state the state token from Apple callback
      * @param code the authorization code from Apple
      * @param idToken the Apple ID token
-     * @return AuthResponse containing access token, refresh token, and user info
+     * @return AuthResponseDTO containing access token, refresh token, and user info
      * @throws SmartRoadException if state is invalid, expired, or user creation fails
      */
     @Transactional
-    public AuthResponse handleAppleCallback(String state, String code, String idToken) throws SmartRoadException {
+    public AuthResponseDTO handleAppleCallback(String state, String code, String idToken) throws SmartRoadException {
         OAuthStateEntity oauthState = oauthStateRepository.findByState(state)
                 .orElseThrow(() -> new SmartRoadException(
                         ApplicationLayer.SERVICE_LAYER,
@@ -99,7 +100,7 @@ public class AppleSignInService {
             );
         }
 
-        if (oauthState.getOAuthType() != OAuthType.APPLE) {
+        if (oauthState.getOauthType() != OAuthType.APPLE) {
             throw new SmartRoadException(
                     ApplicationLayer.SERVICE_LAYER,
                     ErrorCodeMapping.SERVICE_INVALID_INPUT,
@@ -126,23 +127,24 @@ public class AppleSignInService {
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
         SessionEntity session = SessionEntity.builder()
-                .id(UUID.randomUUID())
                 .userId(user.getId())
                 .token(refreshToken)
                 .status(SessionStatus.ACTIVE)
                 .expiresAt(OffsetDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))
-                .createdBy(user.getId())
-                .modifiedBy(user.getId())
                 .build();
+
+        session.setId(UUID.randomUUID());
+        session.setCreatedBy(user.getId());
+        session.setModifiedBy(user.getId());
 
         sessionRepository.save(session);
 
         createAuditLog(user.getId(), user.getId(), "APPLE_SIGNIN", "SUCCESS");
 
-        UserResponse userResponse = mapToUserResponse(user);
+        UserResponseDTO userResponse = mapToUserResponse(user);
         log.info("Apple Sign-In successful for user: {}", user.getEmailId());
 
-        return AuthResponse.builder()
+        return AuthResponseDTO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType("Bearer")
@@ -160,15 +162,16 @@ public class AppleSignInService {
      */
     private UserEntity createOAuthUser(String email, String appleUserId) {
         UserEntity user = UserEntity.builder()
-                .id(UUID.randomUUID())
                 .emailId(email)
                 .oauthSigninId(appleUserId)
-                .oauthType(OAuthType.APPLE)
-                .status(UserStatus.ACTIVE)
-                .emailVerified(true)
-                .createdBy(SYSTEM_USER_ID)
-                .modifiedBy(SYSTEM_USER_ID)
+                .status(UserStatusEnum.ACTIVE)
+                .emailVerifiedYn(true)
                 .build();
+
+        user.setId(UUID.randomUUID());
+        user.setOauthType(OAuthType.APPLE.getValue());
+        user.setCreatedBy(SYSTEM_USER_ID);
+        user.setModifiedBy(SYSTEM_USER_ID);
 
         userRepository.save(user);
         createAuditLog(user.getId(), SYSTEM_USER_ID, "APPLE_SIGNUP", "SUCCESS");
@@ -184,9 +187,9 @@ public class AppleSignInService {
      * @return the updated UserEntity
      */
     private UserEntity updateOAuthUser(UserEntity user, String appleUserId) {
-        user.setOAuthSigninId(appleUserId);
-        user.setOAuthType(OAuthType.APPLE);
-        user.setEmailVerified(true);
+        user.setOauthSigninId(appleUserId);
+        user.setOauthType(OAuthType.APPLE.getValue());
+        user.setEmailVerifiedYn(true);
         user.setModifiedBy(user.getId());
 
         userRepository.save(user);
@@ -196,12 +199,12 @@ public class AppleSignInService {
     }
 
     /**
-     * Maps User entity to UserResponse DTO.
+     * Maps User entity to UserResponseDTO DTO.
      *
      * @param user the User entity
-     * @return the UserResponse DTO
+     * @return the UserResponseDTO DTO
      */
-    private UserResponse mapToUserResponse(UserEntity user) {
+    private UserResponseDTO mapToUserResponse(UserEntity user) {
         return userMapper.toResponse(user);
     }
 
@@ -215,14 +218,15 @@ public class AppleSignInService {
      */
     private void createAuditLog(UUID userId, UUID performedBy, String action, String status) {
         UserAuditLogEntity auditLog = UserAuditLogEntity.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
-                .performedBy(performedBy)
-                .action(action)
-                .status(status)
-                .createdBy(performedBy)
-                .modifiedBy(performedBy)
+                .actionDone(action)
+                .ntStatus(status)
+                .requestedBy(performedBy.toString())
                 .build();
+
+        auditLog.setId(UUID.randomUUID());
+        auditLog.setCreatedBy(performedBy);
+        auditLog.setModifiedBy(performedBy);
 
         userAuditLogRepository.save(auditLog);
     }

@@ -1,8 +1,9 @@
 package com.nextenti.services.api.rest.client;
 
-import com.nextenti.services.common.exception.NextentiException;
-import com.nextenti.services.core.dto.client.ClientRequest;
-import com.nextenti.services.core.dto.client.ClientResponse;
+import com.nextenti.services.api.utils.RequestUtil;
+import com.nextenti.services.common.exception.SmartRoadException;
+import com.nextenti.services.core.dto.client.ClientRequestDTO;
+import com.nextenti.services.core.dto.client.ClientResponseDTO;
 import com.nextenti.services.core.service.client.ClientService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -56,18 +57,19 @@ public class ClientController {
      * @param request the client creation request
      * @param organizationId the organization ID
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the created {@link ClientResponse}
+     * @return {@link ResponseEntity} containing the created {@link ClientResponseDTO}
      * @throws NextentiException if creation fails
      */
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Object> createClient(@RequestBody @Valid ClientRequest request,
+    public ResponseEntity<Object> createClient(@RequestBody @Valid ClientRequestDTO request,
                                                @RequestParam UUID organizationId,
-                                               @RequestHeader HttpHeaders headers) throws NextentiException {
+                                               @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside createClientEntity method--");
 
-        ClientResponse response = clientService.create(organizationId, request);
+        UUID userId = RequestUtil.extractUserId();
+        ClientResponseDTO response = clientService.create(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -77,16 +79,17 @@ public class ClientController {
      *
      * @param organizationId the organization ID
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing a list of {@link ClientResponse}
+     * @return {@link ResponseEntity} containing a list of {@link ClientResponseDTO}
      * @throws NextentiException if retrieval fails
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> listClients(@RequestParam UUID organizationId,
-                                              @RequestHeader HttpHeaders headers) throws NextentiException {
+                                              @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside listClients method--");
 
-        List<ClientResponse> response = clientService.list(organizationId);
+        UUID userId = RequestUtil.extractUserId();
+        List<ClientResponseDTO> response = clientService.list(userId, organizationId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -97,17 +100,18 @@ public class ClientController {
      * @param id the UUID of the client
      * @param organizationId the organization ID
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the {@link ClientResponse}
+     * @return {@link ResponseEntity} containing the {@link ClientResponseDTO}
      * @throws NextentiException if client not found
      */
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> getClient(@PathVariable UUID id,
                                             @RequestParam UUID organizationId,
-                                            @RequestHeader HttpHeaders headers) throws NextentiException {
+                                            @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside getClientEntity method--");
 
-        ClientResponse response = clientService.get(id, organizationId);
+        UUID userId = RequestUtil.extractUserId();
+        ClientResponseDTO response = clientService.get(userId, id, organizationId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -118,18 +122,20 @@ public class ClientController {
      * @param id the UUID of the client
      * @param request the client update request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the updated {@link ClientResponse}
+     * @return {@link ResponseEntity} containing the updated {@link ClientResponseDTO}
      * @throws NextentiException if client not found or update fails
      */
     @PutMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> updateClient(@PathVariable UUID id,
-                                               @RequestBody @Valid ClientRequest request,
-                                               @RequestHeader HttpHeaders headers) throws NextentiException {
+                                               @RequestBody @Valid ClientRequestDTO request,
+                                               @RequestParam UUID organizationId,
+                                               @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside updateClientEntity method--");
 
-        ClientResponse response = clientService.update(id, request);
+        UUID userId = RequestUtil.extractUserId();
+        ClientResponseDTO response = clientService.update(userId, id, request);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -147,10 +153,11 @@ public class ClientController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> deleteClient(@PathVariable UUID id,
                                                @RequestParam UUID organizationId,
-                                               @RequestHeader HttpHeaders headers) throws NextentiException {
+                                               @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside deleteClientEntity method--");
 
-        clientService.delete(id, organizationId);
+        UUID userId = RequestUtil.extractUserId();
+        clientService.delete(userId, id, organizationId);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

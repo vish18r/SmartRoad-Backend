@@ -1,7 +1,7 @@
 package com.nextenti.services.api.error;
 
 import com.nextenti.services.common.exception.SmartRoadException;
-import com.nextenti.services.core.dto.NextentiApiResponse;
+import com.nextenti.services.core.dto.SmartRoadResponseDTO;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -26,34 +26,34 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(SmartRoadException.class)
-    public ResponseEntity<NextentiApiResponse<Void>> handleSmartRoadException(SmartRoadException ex) {
+    public ResponseEntity<SmartRoadResponseDTO<Void>> handleSmartRoadException(SmartRoadException ex) {
         return ResponseEntity.status(ex.getErrorCode().getHttpStatus())
-                .body(NextentiApiResponse.error(resolveMessage(ex.getMessageKey(), ex.getArguments())));
+                .body(SmartRoadResponseDTO.error(resolveMessage(ex.getMessageKey(), ex.getArguments())));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<NextentiApiResponse<Map<String, String>>> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<SmartRoadResponseDTO<Map<String, String>>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> fieldErrors = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(error -> fieldErrors.put(error.getField(), error.getDefaultMessage()));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(NextentiApiResponse.success("Validation failed", fieldErrors));
+                .body(SmartRoadResponseDTO.success("Validation failed", fieldErrors));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<NextentiApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(NextentiApiResponse.error("Invalid credentials"));
+    public ResponseEntity<SmartRoadResponseDTO<Void>> handleBadCredentials(BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(SmartRoadResponseDTO.error("Invalid credentials"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<NextentiApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(NextentiApiResponse.error("Access denied"));
+    public ResponseEntity<SmartRoadResponseDTO<Void>> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(SmartRoadResponseDTO.error("Access denied"));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<NextentiApiResponse<Void>> handleGenericException(Exception ex) {
+    public ResponseEntity<SmartRoadResponseDTO<Void>> handleGenericException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(NextentiApiResponse.error("Something went wrong: " + ex.getMessage()));
+                .body(SmartRoadResponseDTO.error("Something went wrong: " + ex.getMessage()));
     }
 
     private String resolveMessage(String messageKey, java.util.List<String> arguments) {

@@ -1,10 +1,11 @@
 package com.nextenti.services.api.rest.boq;
 
-import com.nextenti.services.common.exception.NextentiException;
-import com.nextenti.services.core.dto.boq.BoqItemRequest;
-import com.nextenti.services.core.dto.boq.BoqItemResponse;
-import com.nextenti.services.core.dto.boq.BoqRequest;
-import com.nextenti.services.core.dto.boq.BoqResponse;
+import com.nextenti.services.api.utils.RequestUtil;
+import com.nextenti.services.common.exception.SmartRoadException;
+import com.nextenti.services.core.dto.boq.BoqItemRequestDTO;
+import com.nextenti.services.core.dto.boq.BoqItemResponseDTO;
+import com.nextenti.services.core.dto.boq.BoqRequestDTO;
+import com.nextenti.services.core.dto.boq.BoqResponseDTO;
 import com.nextenti.services.core.service.boq.BoqService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -55,18 +56,19 @@ public class BoqController {
      * @param projectId the UUID of the project
      * @param request the BOQ creation request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the created {@link BoqResponse}
-     * @throws NextentiException if project not found or creation fails
+     * @return {@link ResponseEntity} containing the created {@link BoqResponseDTO}
+     * @throws SmartRoadException if project not found or creation fails
      */
     @PostMapping(path = "/projects/{projectId}/boq", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> createBoq(@PathVariable UUID projectId,
-                                            @RequestBody @Valid BoqRequest request,
-                                            @RequestHeader HttpHeaders headers) throws NextentiException {
+                                            @RequestBody @Valid BoqRequestDTO request,
+                                            @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside createBoq method--");
 
-        BoqResponse response = boqService.create(projectId, request);
+        UUID userId = RequestUtil.extractUserId();
+        BoqResponseDTO response = boqService.create(userId, projectId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -76,16 +78,17 @@ public class BoqController {
      *
      * @param projectId the UUID of the project
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing a list of {@link BoqResponse}
-     * @throws NextentiException if project not found or retrieval fails
+     * @return {@link ResponseEntity} containing a list of {@link BoqResponseDTO}
+     * @throws SmartRoadException if project not found or retrieval fails
      */
     @GetMapping(path = "/projects/{projectId}/boq", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> listBoqs(@PathVariable UUID projectId,
-                                           @RequestHeader HttpHeaders headers) throws NextentiException {
+                                           @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside listBoqs method--");
 
-        List<BoqResponse> response = boqService.list(projectId);
+        UUID userId = RequestUtil.extractUserId();
+        List<BoqResponseDTO> response = boqService.list(userId, projectId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -96,18 +99,19 @@ public class BoqController {
      * @param boqId the UUID of the BOQ
      * @param request the BOQ item creation request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the created {@link BoqItemResponse}
-     * @throws NextentiException if BOQ not found or creation fails
+     * @return {@link ResponseEntity} containing the created {@link BoqItemResponseDTO}
+     * @throws SmartRoadException if BOQ not found or creation fails
      */
     @PostMapping(path = "/boq/{boqId}/items", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> addBoqItem(@PathVariable UUID boqId,
-                                             @RequestBody @Valid BoqItemRequest request,
-                                             @RequestHeader HttpHeaders headers) throws NextentiException {
+                                             @RequestBody @Valid BoqItemRequestDTO request,
+                                             @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside addBoqItem method--");
 
-        BoqItemResponse response = boqService.addItem(boqId, request);
+        UUID userId = RequestUtil.extractUserId();
+        BoqItemResponseDTO response = boqService.addItem(userId, boqId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -117,16 +121,17 @@ public class BoqController {
      *
      * @param boqId the UUID of the BOQ
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing a list of {@link BoqItemResponse}
-     * @throws NextentiException if BOQ not found or retrieval fails
+     * @return {@link ResponseEntity} containing a list of {@link BoqItemResponseDTO}
+     * @throws SmartRoadException if BOQ not found or retrieval fails
      */
     @GetMapping(path = "/boq/{boqId}/items", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> listBoqItems(@PathVariable UUID boqId,
-                                               @RequestHeader HttpHeaders headers) throws NextentiException {
+                                               @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside listBoqItems method--");
 
-        List<BoqItemResponse> response = boqService.listItems(boqId);
+        UUID userId = RequestUtil.extractUserId();
+        List<BoqItemResponseDTO> response = boqService.listItems(userId, boqId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

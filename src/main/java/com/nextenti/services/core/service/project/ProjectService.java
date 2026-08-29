@@ -1,10 +1,11 @@
 package com.nextenti.services.core.service.project;
 
+import com.nextenti.services.common.enums.ProjectStatus;
 import com.nextenti.services.common.exception.ApplicationLayer;
 import com.nextenti.services.common.exception.ErrorCodeMapping;
 import com.nextenti.services.common.exception.SmartRoadException;
-import com.nextenti.services.core.dto.project.ProjectRequest;
-import com.nextenti.services.core.dto.project.ProjectResponse;
+import com.nextenti.services.core.dto.project.ProjectRequestDTO;
+import com.nextenti.services.core.dto.project.ProjectResponseDTO;
 import com.nextenti.services.core.service.organization.OrganizationService;
 import com.nextenti.services.domain.entity.ProjectEntity;
 import com.nextenti.services.domain.repository.ProjectRepository;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,7 +48,7 @@ public class ProjectService {
      * @throws SmartRoadException if user is not an organization member
      */
     @Transactional
-    public ProjectResponse create(UUID u, ProjectRequest r) throws SmartRoadException {
+    public ProjectResponseDTO create(UUID u, ProjectRequestDTO r) throws SmartRoadException {
         orgs.requireMember(u, r.organizationId());
         ProjectEntity p = new ProjectEntity();
         p.setId(UUID.randomUUID());
@@ -65,9 +68,23 @@ public class ProjectService {
      * @throws SmartRoadException if user is not an organization member
      */
     @Transactional(readOnly = true)
-    public List<ProjectResponse> list(UUID u, UUID org) throws SmartRoadException {
+    public List<ProjectResponseDTO> list(UUID u, UUID org) throws SmartRoadException {
         orgs.requireMember(u, org);
         return projects.findByOrganizationIdAndArchivedFalse(org).stream().map(this::map).toList();
+    }
+
+    /**
+     * Retrieves a specific project by ID without authorization check.
+     *
+     * @param id the project UUID
+     * @return the project response DTO
+     * @throws SmartRoadException if project not found
+     */
+    @Transactional(readOnly = true)
+    public ProjectResponseDTO getById(UUID id) throws SmartRoadException {
+        ProjectEntity p = projects.findById(id)
+                .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "project.not.found"));
+        return map(p);
     }
 
     /**
@@ -80,7 +97,7 @@ public class ProjectService {
      * @throws SmartRoadException if project not found or user not authorized
      */
     @Transactional(readOnly = true)
-    public ProjectResponse get(UUID u, UUID id, UUID org) throws SmartRoadException {
+    public ProjectResponseDTO get(UUID u, UUID id, UUID org) throws SmartRoadException {
         return map(find(u, id, org));
     }
 
@@ -94,7 +111,7 @@ public class ProjectService {
      * @throws SmartRoadException if project not found or user not authorized
      */
     @Transactional
-    public ProjectResponse update(UUID u, UUID id, ProjectRequest r) throws SmartRoadException {
+    public ProjectResponseDTO update(UUID u, UUID id, ProjectRequestDTO r) throws SmartRoadException {
         ProjectEntity p = find(u, id, r.organizationId());
         apply(p, r);
         p.setModifiedBy(u);
@@ -138,17 +155,17 @@ public class ProjectService {
      * @param p the project entity to update
      * @param r the project request DTO
      */
-    private void apply(ProjectEntity p, ProjectRequest r) {
+    private void apply(ProjectEntity p, ProjectRequestDTO r) {
         p.setClientId(r.clientId());
         p.setCode(r.code());
         p.setName(r.name());
         p.setDescription(r.description());
         p.setLocation(r.location());
-        p.setStatus(r.status());
+        p.setStatus(r.status().name());
         p.setBudget(r.budget());
         p.setProgress(r.progress() == null ? BigDecimal.ZERO : r.progress());
-        p.setStartDate(r.startDate());
-        p.setEndDate(r.endDate());
+        p.setStartDate(r.startDate() == null ? null : Date.valueOf(r.startDate()));
+        p.setEndDate(r.endDate() == null ? null : Date.valueOf(r.endDate()));
     }
 
     /**
@@ -157,9 +174,11 @@ public class ProjectService {
      * @param p the project entity
      * @return the project response DTO
      */
-    private ProjectResponse map(ProjectEntity p) {
-        return new ProjectResponse(p.getId(), p.getOrganizationId(), p.getClientId(), p.getCode(), p.getName(),
-                p.getDescription(), p.getLocation(), p.getStatus(), p.getBudget(), p.getActualCost(), p.getProgress(),
-                p.getStartDate(), p.getEndDate(), Boolean.TRUE.equals(p.getArchived()));
+    private ProjectResponseDTO map(ProjectEntity p) {
+        LocalDate startDate = p.getStartDate() == null ? null : p.getStartDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = p.getEndDate() == null ? null : p.getEndDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        return new ProjectResponseDTO(p.getId(), p.getOrganizationId(), p.getClientId(), p.getCode(), p.getName(),
+                p.getDescription(), p.getLocation(), ProjectStatus.valueOf(p.getStatus()), p.getBudget(), p.getActualCost(), p.getProgress(),
+                startDate, endDate, Boolean.TRUE.equals(p.getArchived()));
     }
 }

@@ -13,7 +13,7 @@ public interface OAuthStateRepository extends JpaRepository<OAuthStateEntity, UU
 
     Optional<OAuthStateEntity> findByState(String state);
 
-    Optional<OAuthStateEntity> findByStateAndUsedFalseAndExpiresOnAfter(String state, OffsetDateTime now);
+    Optional<OAuthStateEntity> findByStateAndUsedFalseAndExpiresAtAfter(String state, OffsetDateTime now);
 
     void deleteByState(String state);
 }

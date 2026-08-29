@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * @author
+ * @author Vishal
  * @version 1.0
  */
 @Service
@@ -45,17 +45,18 @@ public class OtpService {
         String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(1000000));
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
 
-        Otp otpEntity = Otp.builder()
-                .id(UUID.randomUUID())
+        OtpEntity otpEntity = OtpEntity.builder()
                 .emailId(email)
                 .emailOtp(otp)
                 .flow(flow)
                 .expiresAt(expiresAt)
                 .active(true)
                 .retryCount(0)
-                .createdBy(UUID.randomUUID())
-                .modifiedBy(UUID.randomUUID())
                 .build();
+
+        otpEntity.setId(UUID.randomUUID());
+        otpEntity.setCreatedBy(UUID.randomUUID());
+        otpEntity.setModifiedBy(UUID.randomUUID());
 
         otpRepository.save(otpEntity);
 
@@ -77,17 +78,18 @@ public class OtpService {
         String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(1000000));
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
 
-        Otp otpEntity = Otp.builder()
-                .id(UUID.randomUUID())
+        OtpEntity otpEntity = OtpEntity.builder()
                 .phoneNumber(phoneNumber)
                 .phoneOtp(otp)
                 .flow(flow)
                 .expiresAt(expiresAt)
                 .active(true)
                 .retryCount(0)
-                .createdBy(UUID.randomUUID())
-                .modifiedBy(UUID.randomUUID())
                 .build();
+
+        otpEntity.setId(UUID.randomUUID());
+        otpEntity.setCreatedBy(UUID.randomUUID());
+        otpEntity.setModifiedBy(UUID.randomUUID());
 
         otpRepository.save(otpEntity);
 
@@ -109,7 +111,7 @@ public class OtpService {
     @Transactional
     public void verifyOtp(String email, String otp, OtpFlow flow) throws SmartRoadException {
         OffsetDateTime now = OffsetDateTime.now();
-        Otp otpEntity = otpRepository.findByEmailIdAndEmailOtpAndFlowAndActiveTrue(email, otp, flow)
+        OtpEntity otpEntity = otpRepository.findByEmailIdAndEmailOtpAndFlowAndActiveTrue(email, otp, flow)
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "invalid.otp"));
 
         if (otpEntity.getExpiresAt().isBefore(now)) {
@@ -141,7 +143,7 @@ public class OtpService {
     @Transactional
     public void verifyPhoneOtp(String phoneNumber, String otp, OtpFlow flow) throws SmartRoadException {
         OffsetDateTime now = OffsetDateTime.now();
-        Otp otpEntity = otpRepository.findByPhoneNumberAndPhoneOtpAndFlowAndActiveTrue(phoneNumber, otp, flow)
+        OtpEntity otpEntity = otpRepository.findByPhoneNumberAndPhoneOtpAndFlowAndActiveTrue(phoneNumber, otp, flow)
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "invalid.otp"));
 
         if (otpEntity.getExpiresAt().isBefore(now)) {
@@ -169,7 +171,7 @@ public class OtpService {
      */
     @Transactional
     public void invalidatePreviousOtps(String email, OtpFlow flow) {
-        List<Otp> activeOtps = otpRepository.findByEmailIdAndFlowOrderByDateCreatedDesc(email, flow);
+        List<OtpEntity> activeOtps = otpRepository.findByEmailIdAndFlowOrderByDateCreatedDesc(email, flow);
         activeOtps.forEach(otp -> {
             otp.setActive(false);
             otpRepository.save(otp);
@@ -185,7 +187,7 @@ public class OtpService {
      */
     @Transactional
     public void invalidatePreviousPhoneOtps(String phoneNumber, OtpFlow flow) {
-        List<Otp> activeOtps = otpRepository.findByPhoneNumberAndFlowOrderByDateCreatedDesc(phoneNumber, flow);
+        List<OtpEntity> activeOtps = otpRepository.findByPhoneNumberAndFlowOrderByDateCreatedDesc(phoneNumber, flow);
         activeOtps.forEach(otp -> {
             otp.setActive(false);
             otpRepository.save(otp);
@@ -201,13 +203,13 @@ public class OtpService {
      * @return true if OTP can be resent, false if cooldown period not elapsed
      */
     public boolean canResendOtp(String email, OtpFlow flow) {
-        List<Otp> recentOtps = otpRepository.findByEmailIdAndFlowOrderByDateCreatedDesc(email, flow);
+        List<OtpEntity> recentOtps = otpRepository.findByEmailIdAndFlowOrderByDateCreatedDesc(email, flow);
         if (recentOtps.isEmpty()) {
             return true;
         }
 
-        Otp lastOtp = recentOtps.get(0);
-        OffsetDateTime oneMinuteAgo = OffsetDateTime.now().minusMinutes(1);
-        return lastOtp.getDateCreated().isBefore(oneMinuteAgo);
+        OtpEntity lastOtp = recentOtps.get(0);
+        long oneMinuteAgo = System.currentTimeMillis() - (60 * 1000);
+        return lastOtp.getDateCreated().getTime() < oneMinuteAgo;
     }
 }

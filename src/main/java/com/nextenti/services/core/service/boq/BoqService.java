@@ -3,10 +3,10 @@ package com.nextenti.services.core.service.boq;
 import com.nextenti.services.common.exception.ApplicationLayer;
 import com.nextenti.services.common.exception.ErrorCodeMapping;
 import com.nextenti.services.common.exception.SmartRoadException;
-import com.nextenti.services.core.dto.boq.BoqItemRequest;
-import com.nextenti.services.core.dto.boq.BoqItemResponse;
-import com.nextenti.services.core.dto.boq.BoqRequest;
-import com.nextenti.services.core.dto.boq.BoqResponse;
+import com.nextenti.services.core.dto.boq.BoqItemRequestDTO;
+import com.nextenti.services.core.dto.boq.BoqItemResponseDTO;
+import com.nextenti.services.core.dto.boq.BoqRequestDTO;
+import com.nextenti.services.core.dto.boq.BoqResponseDTO;
 import com.nextenti.services.core.service.organization.OrganizationService;
 import com.nextenti.services.domain.entity.BoqEntity;
 import com.nextenti.services.domain.entity.BoqItemEntity;
@@ -83,7 +83,7 @@ public class BoqService {
      * @throws SmartRoadException if project not found or user not authorized
      */
     @Transactional
-    public BoqResponse create(UUID u, UUID p, BoqRequest r) throws SmartRoadException {
+    public BoqResponseDTO create(UUID u, UUID p, BoqRequestDTO r) throws SmartRoadException {
         project(u, p);
         BoqEntity b = new BoqEntity();
         b.setId(UUID.randomUUID());
@@ -104,7 +104,7 @@ public class BoqService {
      * @throws SmartRoadException if project not found or user not authorized
      */
     @Transactional(readOnly = true)
-    public List<BoqResponse> list(UUID u, UUID p) throws SmartRoadException {
+    public List<BoqResponseDTO> list(UUID u, UUID p) throws SmartRoadException {
         project(u, p);
         return boqs.findByProjectId(p).stream().map(this::map).toList();
     }
@@ -119,7 +119,7 @@ public class BoqService {
      * @throws SmartRoadException if BOQ not found or user not authorized
      */
     @Transactional
-    public BoqItemResponse addItem(UUID u, UUID bid, BoqItemRequest r) throws SmartRoadException {
+    public BoqItemResponseDTO addItem(UUID u, UUID bid, BoqItemRequestDTO r) throws SmartRoadException {
         BoqEntity b = boqs.findById(bid)
                 .orElseThrow(() -> nf("boq.not.found"));
         project(u, b.getProjectId());
@@ -141,7 +141,7 @@ public class BoqService {
      * @throws SmartRoadException if BOQ not found or user not authorized
      */
     @Transactional(readOnly = true)
-    public List<BoqItemResponse> listItems(UUID u, UUID bid) throws SmartRoadException {
+    public List<BoqItemResponseDTO> listItems(UUID u, UUID bid) throws SmartRoadException {
         BoqEntity b = boqs.findById(bid)
                 .orElseThrow(() -> nf("boq.not.found"));
         project(u, b.getProjectId());
@@ -154,7 +154,7 @@ public class BoqService {
      * @param i the BOQ item entity to update
      * @param r the BOQ item request DTO
      */
-    private void apply(BoqItemEntity i, BoqItemRequest r) {
+    private void apply(BoqItemEntity i, BoqItemRequestDTO r) {
         i.setItemCode(r.itemCode());
         i.setDescription(r.description());
         i.setUnit(r.unit());
@@ -170,8 +170,8 @@ public class BoqService {
      * @param b the BOQ entity
      * @return the BOQ response DTO
      */
-    private BoqResponse map(BoqEntity b) {
-        return new BoqResponse(b.getId(), b.getProjectId(), b.getName(), b.getDescription());
+    private BoqResponseDTO map(BoqEntity b) {
+        return new BoqResponseDTO(b.getId(), b.getProjectId(), b.getName(), b.getDescription());
     }
 
     /**
@@ -180,10 +180,10 @@ public class BoqService {
      * @param i the BOQ item entity
      * @return the BOQ item response DTO
      */
-    private BoqItemResponse itemMap(BoqItemEntity i) {
+    private BoqItemResponseDTO itemMap(BoqItemEntity i) {
         BigDecimal est = i.getEstimatedQuantity().multiply(i.getRate());
         BigDecimal act = i.getActualQuantity().multiply(i.getActualRate());
-        return new BoqItemResponse(i.getId(), i.getBoqId(), i.getItemCode(), i.getDescription(), i.getUnit(),
+        return new BoqItemResponseDTO(i.getId(), i.getBoqId(), i.getItemCode(), i.getDescription(), i.getUnit(),
                 i.getEstimatedQuantity(), i.getRate(), est, i.getActualQuantity(), i.getActualRate(), act,
                 i.getActualQuantity().subtract(i.getEstimatedQuantity()), act.subtract(est));
     }

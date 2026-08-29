@@ -1,14 +1,14 @@
 package com.nextenti.services.api.rest.auth;
 
-import com.nextenti.services.common.exception.NextentiException;
-import com.nextenti.services.core.dto.auth.ChangePasswordRequest;
-import com.nextenti.services.core.dto.auth.ForgotPasswordRequest;
-import com.nextenti.services.core.dto.auth.LoginRequest;
-import com.nextenti.services.core.dto.auth.RefreshTokenRequest;
-import com.nextenti.services.core.dto.auth.ResendOtpRequest;
-import com.nextenti.services.core.dto.auth.ResetPasswordRequest;
-import com.nextenti.services.core.dto.auth.SendOtpRequest;
-import com.nextenti.services.core.dto.auth.VerifyOtpRequest;
+import com.nextenti.services.common.exception.SmartRoadException;
+import com.nextenti.services.core.dto.auth.ChangePasswordRequestDTO;
+import com.nextenti.services.core.dto.auth.ForgotPasswordRequestDTO;
+import com.nextenti.services.core.dto.auth.LoginRequestDTO;
+import com.nextenti.services.core.dto.auth.RefreshTokenRequestDTO;
+import com.nextenti.services.core.dto.auth.ResendOtpRequestDTO;
+import com.nextenti.services.core.dto.auth.ResetPasswordRequestDTO;
+import com.nextenti.services.core.dto.auth.SendOtpRequestDTO;
+import com.nextenti.services.core.dto.auth.VerifyOtpRequestDTO;
 import com.nextenti.services.core.service.auth.AuthService;
 import com.nextenti.services.core.service.auth.OtpService;
 import jakarta.validation.Valid;
@@ -60,13 +60,13 @@ public class AuthController {
      * @param request the signup request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} with HTTP 201 Created
-     * @throws NextentiException if registration fails
+     * @throws SmartRoadException if registration fails
      */
     @PostMapping(path = {"/register", "/signup"}, produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Object> register(@RequestBody @Valid SendOtpRequest request,
-                                           @RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> register(@RequestBody @Valid SendOtpRequestDTO request,
+                                           @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside register method--");
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -78,13 +78,13 @@ public class AuthController {
      * @param request the OTP request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} with HTTP 200 OK
-     * @throws NextentiException if OTP generation fails
+     * @throws SmartRoadException if OTP generation fails
      */
     @PostMapping(path = "/otp/send", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Object> sendOtp(@RequestBody @Valid SendOtpRequest request,
-                                          @RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> sendOtp(@RequestBody @Valid SendOtpRequestDTO request,
+                                          @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside sendOtp method--");
 
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
@@ -92,7 +92,7 @@ public class AuthController {
         } else if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
             otpService.generateOtpForPhone(request.getPhoneNumber(), request.getFlow());
         } else {
-            throw new NextentiException(
+            throw new SmartRoadException(
                     com.nextenti.services.common.exception.ApplicationLayer.SERVICE_LAYER,
                     com.nextenti.services.common.exception.ErrorCodeMapping.SERVICE_INVALID_INPUT,
                     "email.or.phone.required"
@@ -108,14 +108,14 @@ public class AuthController {
      * @param request the OTP verification request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} with HTTP 200 OK
-     * @throws NextentiException if OTP verification fails
+     * @throws SmartRoadException if OTP verification fails
      */
     @PostMapping(path = {"/otp/verify", "/verify-otp", "/verify-email"},
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Object> verifyOtp(@RequestBody @Valid VerifyOtpRequest request,
-                                            @RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> verifyOtp(@RequestBody @Valid VerifyOtpRequestDTO request,
+                                            @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside verifyOtp method--");
 
         authService.verifyOtp(request);
@@ -129,14 +129,14 @@ public class AuthController {
      * @param request the OTP resend request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} with HTTP 200 OK
-     * @throws NextentiException if OTP resend fails
+     * @throws SmartRoadException if OTP resend fails
      */
     @PostMapping(path = {"/otp/resend", "/resend-otp", "/resend-verification"},
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Object> resendOtp(@RequestBody @Valid ResendOtpRequest request,
-                                            @RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> resendOtp(@RequestBody @Valid ResendOtpRequestDTO request,
+                                            @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside resendOtp method--");
 
         authService.resendOtp(request);
@@ -150,13 +150,13 @@ public class AuthController {
      * @param request the forgot password request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} with HTTP 200 OK
-     * @throws NextentiException if password reset initiation fails
+     * @throws SmartRoadException if password reset initiation fails
      */
     @PostMapping(path = "/forgot-password", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Object> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request,
-                                                 @RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> forgotPassword(@RequestBody @Valid ForgotPasswordRequestDTO request,
+                                                 @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside forgotPassword method--");
 
         authService.forgotPassword(request);
@@ -170,13 +170,13 @@ public class AuthController {
      * @param request the reset password request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} with HTTP 200 OK
-     * @throws NextentiException if password reset fails
+     * @throws SmartRoadException if password reset fails
      */
     @PostMapping(path = "/reset-password", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Object> resetPassword(@RequestBody @Valid ResetPasswordRequest request,
-                                                @RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> resetPassword(@RequestBody @Valid ResetPasswordRequestDTO request,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside resetPassword method--");
 
         authService.resetPassword(request);
@@ -190,13 +190,13 @@ public class AuthController {
      * @param request the change password request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} with HTTP 200 OK
-     * @throws NextentiException if password change fails
+     * @throws SmartRoadException if password change fails
      */
     @PostMapping(path = "/change-password", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Object> changePassword(@RequestBody @Valid ChangePasswordRequest request,
-                                                 @RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> changePassword(@RequestBody @Valid ChangePasswordRequestDTO request,
+                                                 @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside changePassword method--");
 
         // Note: Extract user ID from authenticated principal in actual implementation

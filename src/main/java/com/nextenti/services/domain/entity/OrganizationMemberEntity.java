@@ -6,20 +6,24 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 /**
+ * JPA entity representing an organization member stored in the organization_members table.
+ *
  * @author Vishal
  * @version 1.0
  */
 @Entity
-@Table(name = "organization_members")
+@Table(name = "sr_organization_members")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @EqualsAndHashCode(callSuper = true)
 public class OrganizationMemberEntity extends SmartRoadBaseEntity {
 
@@ -29,11 +33,10 @@ public class OrganizationMemberEntity extends SmartRoadBaseEntity {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private String status;
-
     @Column(name = "role")
     private String role;
+
+    @Column(name = "active")
+    private Boolean active;
 }
 

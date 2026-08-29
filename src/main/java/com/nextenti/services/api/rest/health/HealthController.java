@@ -1,6 +1,6 @@
 package com.nextenti.services.api.rest.health;
 
-import com.nextenti.services.core.dto.NextentiApiResponse;
+import com.nextenti.services.core.dto.SmartRoadResponseDTO;
 import com.nextenti.services.core.dto.health.HealthStatusDTO;
 import com.nextenti.services.core.service.health.HealthService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +18,7 @@ public class HealthController {
     }
 
     @GetMapping
-    public NextentiApiResponse<HealthStatusDTO> health() {
-        return NextentiApiResponse.success("Application is running", healthService.getStatus());
+    public SmartRoadResponseDTO<HealthStatusDTO> health() {
+        return SmartRoadResponseDTO.success("Application is running", healthService.getStatus());
     }
 }

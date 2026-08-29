@@ -1,8 +1,9 @@
 package com.nextenti.services.api.rest.organization;
 
-import com.nextenti.services.common.exception.NextentiException;
-import com.nextenti.services.core.dto.organization.OrganizationRequest;
-import com.nextenti.services.core.dto.organization.OrganizationResponse;
+import com.nextenti.services.api.utils.RequestUtil;
+import com.nextenti.services.common.exception.SmartRoadException;
+import com.nextenti.services.core.dto.organization.OrganizationRequestDTO;
+import com.nextenti.services.core.dto.organization.OrganizationResponseDTO;
 import com.nextenti.services.core.service.organization.OrganizationService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -54,17 +55,18 @@ public class OrganizationController {
      *
      * @param request the organization creation request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the created {@link OrganizationResponse}
+     * @return {@link ResponseEntity} containing the created {@link OrganizationResponseDTO}
      * @throws NextentiException if creation fails
      */
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Object> createOrganization(@RequestBody @Valid OrganizationRequest request,
-                                                     @RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> createOrganization(@RequestBody @Valid OrganizationRequestDTO request,
+                                                     @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside createOrganizationEntity method--");
 
-        OrganizationResponse response = organizationService.create(request);
+        UUID userId = RequestUtil.extractUserId();
+        OrganizationResponseDTO response = organizationService.create(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -73,15 +75,15 @@ public class OrganizationController {
      * Retrieves all organizations for the authenticated user.
      *
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing a list of {@link OrganizationResponse}
+     * @return {@link ResponseEntity} containing a list of {@link OrganizationResponseDTO}
      * @throws NextentiException if retrieval fails
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Object> listOrganizations(@RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> listOrganizations(@RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside listOrganizations method--");
 
-        List<OrganizationResponse> response = organizationService.list();
+        List<OrganizationResponseDTO> response = organizationService.list();
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -90,15 +92,16 @@ public class OrganizationController {
      * Retrieves user's organizations.
      *
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing a list of {@link OrganizationResponse}
+     * @return {@link ResponseEntity} containing a list of {@link OrganizationResponseDTO}
      * @throws NextentiException if retrieval fails
      */
     @GetMapping(path = "/my-organizations", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Object> getMyOrganizations(@RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> getMyOrganizations(@RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside getMyOrganizations method--");
 
-        List<OrganizationResponse> response = organizationService.getMyOrganizations();
+        UUID userId = RequestUtil.extractUserId();
+        List<OrganizationResponseDTO> response = organizationService.mine(userId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -108,16 +111,17 @@ public class OrganizationController {
      *
      * @param id the UUID of the organization
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the {@link OrganizationResponse}
+     * @return {@link ResponseEntity} containing the {@link OrganizationResponseDTO}
      * @throws NextentiException if organization not found
      */
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> getOrganization(@PathVariable UUID id,
-                                                  @RequestHeader HttpHeaders headers) throws NextentiException {
+                                                  @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside getOrganizationEntity method--");
 
-        OrganizationResponse response = organizationService.get(id);
+        UUID userId = RequestUtil.extractUserId();
+        OrganizationResponseDTO response = organizationService.get(userId, id);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -128,18 +132,19 @@ public class OrganizationController {
      * @param id the UUID of the organization
      * @param request the organization update request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the updated {@link OrganizationResponse}
+     * @return {@link ResponseEntity} containing the updated {@link OrganizationResponseDTO}
      * @throws NextentiException if organization not found or update fails
      */
     @PutMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> updateOrganization(@PathVariable UUID id,
-                                                     @RequestBody @Valid OrganizationRequest request,
-                                                     @RequestHeader HttpHeaders headers) throws NextentiException {
+                                                     @RequestBody @Valid OrganizationRequestDTO request,
+                                                     @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside updateOrganizationEntity method--");
 
-        OrganizationResponse response = organizationService.update(id, request);
+        UUID userId = RequestUtil.extractUserId();
+        OrganizationResponseDTO response = organizationService.update(userId, id, request);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -155,10 +160,11 @@ public class OrganizationController {
     @DeleteMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> deleteOrganization(@PathVariable UUID id,
-                                                     @RequestHeader HttpHeaders headers) throws NextentiException {
+                                                     @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside deleteOrganizationEntity method--");
 
-        organizationService.delete(id);
+        UUID userId = RequestUtil.extractUserId();
+        organizationService.deactivate(userId, id);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

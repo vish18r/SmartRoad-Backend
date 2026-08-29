@@ -1,6 +1,6 @@
 package com.nextenti.services.core.service.auth;
 
-import com.nextenti.services.common.enums.UserStatus;
+import com.nextenti.services.common.enums.auth.UserStatusEnum;
 import com.nextenti.services.domain.entity.UserEntity;
 import com.nextenti.services.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         UserEntity user = userRepository.findByIdentifier(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with identifier: " + username));
 
-        if (user.getStatus() != UserStatus.ACTIVE) {
+        if (user.getStatus() != UserStatusEnum.ACTIVE) {
             throw new UsernameNotFoundException("User account is not active: " + username);
         }
 
@@ -31,9 +31,9 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .password(user.getPassword())
                 .authorities(new ArrayList<>())
                 .accountExpired(false)
-                .accountLocked(user.getStatus() == UserStatus.BLOCKED)
+                .accountLocked(user.getStatus() == UserStatusEnum.BLOCKED)
                 .credentialsExpired(false)
-                .disabled(user.getStatus() == UserStatus.DISABLED)
+                .disabled(user.getStatus() == UserStatusEnum.INACTIVE)
                 .build();
     }
 }

@@ -1,12 +1,12 @@
 package com.nextenti.services.core.mapper.auth;
 
-import com.nextenti.services.core.dto.auth.UserResponse;
+import com.nextenti.services.core.dto.auth.UserResponseDTO;
 import com.nextenti.services.domain.entity.UserEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 /**
- * Mapper interface for converting between User entity and UserResponse DTO.
+ * Mapper interface for converting between User entity and UserResponseDTO DTO.
  *
  * @author
  * @version 1.0
@@ -15,11 +15,12 @@ import org.mapstruct.Mapping;
 public interface UserMapper {
 
     /**
-     * Converts User entity to UserResponse DTO.
+     * Converts User entity to UserResponseDTO.
      *
-     * @param user the User entity
-     * @return the UserResponse DTO
+     * @param user the UserEntity
+     * @return the UserResponseDTO
      */
     @Mapping(source = "emailId", target = "email")
-    UserResponse toResponse(User user);
+    @Mapping(source = "emailVerifiedYn", target = "emailVerified")
+    UserResponseDTO toResponse(UserEntity user);
 }

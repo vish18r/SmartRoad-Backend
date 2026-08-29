@@ -10,7 +10,7 @@ import java.util.UUID;
 @Repository
 public interface UserAuditLogRepository extends JpaRepository<UserAuditLogEntity, UUID> {
 
-    List<UserAuditLogEntity> findByActionDoneForUserIdOrderByDateCreatedDesc(UUID userId);
+    List<UserAuditLogEntity> findByUserIdOrderByDateCreatedDesc(UUID userId);
 
-    List<UserAuditLogEntity> findByRequestedByOrderByDateCreatedDesc(UUID requestedBy);
+    List<UserAuditLogEntity> findByRequestedByOrderByDateCreatedDesc(String requestedBy);
 }

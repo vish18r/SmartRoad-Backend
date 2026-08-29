@@ -2,11 +2,21 @@ package com.nextenti.services.core.service.auth;
 
 import com.nextenti.services.common.enums.OtpFlow;
 import com.nextenti.services.common.enums.SessionStatus;
-import com.nextenti.services.common.enums.UserStatus;
+import com.nextenti.services.common.enums.auth.UserStatusEnum;
 import com.nextenti.services.common.exception.SmartRoadException;
 import com.nextenti.services.common.exception.ApplicationLayer;
 import com.nextenti.services.common.exception.ErrorCodeMapping;
-import com.nextenti.services.core.dto.auth.*;
+import com.nextenti.services.core.dto.auth.SignupRequestDTO;
+import com.nextenti.services.core.dto.auth.LoginRequestDTO;
+import com.nextenti.services.core.dto.auth.AuthResponseDTO;
+import com.nextenti.services.core.dto.auth.RefreshTokenRequestDTO;
+import com.nextenti.services.core.dto.auth.TokenResponseDTO;
+import com.nextenti.services.core.dto.auth.UserResponseDTO;
+import com.nextenti.services.core.dto.auth.ForgotPasswordRequestDTO;
+import com.nextenti.services.core.dto.auth.ResetPasswordRequestDTO;
+import com.nextenti.services.core.dto.auth.ChangePasswordRequestDTO;
+import com.nextenti.services.core.dto.auth.VerifyOtpRequestDTO;
+import com.nextenti.services.core.dto.auth.ResendOtpRequestDTO;
 import com.nextenti.services.domain.entity.SessionEntity;
 import com.nextenti.services.domain.entity.UserEntity;
 import com.nextenti.services.domain.entity.UserAuditLogEntity;
@@ -55,7 +65,7 @@ public class AuthService {
      * @throws SmartRoadException if password mismatch, email/phone already exists, or database operation fails
      */
     @Transactional
-    public void signup(SignupRequest request) throws SmartRoadException {
+    public void signup(SignupRequestDTO request) throws SmartRoadException {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "passwords.do.not.match");
         }
@@ -69,18 +79,19 @@ public class AuthService {
         }
 
         UserEntity user = UserEntity.builder()
-                .id(UUID.randomUUID())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .emailId(request.getEmail())
                 .phoneNumber(request.getPhoneNumber())
                 .countryCode(request.getCountryCode())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .status(UserStatus.PENDING)
-                .emailVerified(false)
-                .createdBy(SYSTEM_USER_ID)
-                .modifiedBy(SYSTEM_USER_ID)
+                .status(UserStatusEnum.PENDING)
+                .emailVerifiedYn(false)
                 .build();
+
+        user.setId(UUID.randomUUID());
+        user.setCreatedBy(SYSTEM_USER_ID);
+        user.setModifiedBy(SYSTEM_USER_ID);
 
         userRepository.save(user);
 
@@ -99,11 +110,11 @@ public class AuthService {
      * creates session record, and logs the login action.
      *
      * @param request the login request containing identifier and password
-     * @return AuthResponse containing access token, refresh token, and user details
+     * @return AuthResponseDTO containing access token, refresh token, and user details
      * @throws SmartRoadException if authentication fails, user not found, or account not active
      */
     @Transactional
-    public AuthResponse login(LoginRequest request) throws SmartRoadException {
+    public AuthResponseDTO login(LoginRequestDTO request) throws SmartRoadException {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword())
         );
@@ -111,15 +122,11 @@ public class AuthService {
         UserEntity user = userRepository.findByIdentifier(request.getIdentifier())
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
 
-        if (user.getStatus() == UserStatus.BLOCKED) {
+        if (user.getStatus() == UserStatusEnum.BLOCKED) {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_ACCESS_DENIED, "account.blocked");
         }
 
-        if (user.getStatus() == UserStatus.DISABLED) {
-            throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_ACCESS_DENIED, "account.disabled");
-        }
-
-        if (user.getStatus() != UserStatus.ACTIVE) {
+        if (user.getStatus() != UserStatusEnum.ACTIVE) {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_ACCESS_DENIED, "account.not.active");
         }
 
@@ -129,24 +136,25 @@ public class AuthService {
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
         SessionEntity session = SessionEntity.builder()
-                .id(UUID.randomUUID())
                 .userId(user.getId())
                 .token(refreshToken)
                 .status(SessionStatus.ACTIVE)
                 .expiresAt(OffsetDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))
-                .createdBy(user.getId())
-                .modifiedBy(user.getId())
                 .build();
+
+        session.setId(UUID.randomUUID());
+        session.setCreatedBy(user.getId());
+        session.setModifiedBy(user.getId());
 
         sessionRepository.save(session);
 
         createAuditLog(user.getId(), user.getId(), "LOGIN", "SUCCESS");
 
-        UserResponse userResponse = mapToUserResponse(user);
+        UserResponseDTO userResponse = mapToUserResponse(user);
 
         log.info("User logged in successfully: {}", user.getEmailId());
 
-        return AuthResponse.builder()
+        return AuthResponseDTO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType("Bearer")
@@ -161,11 +169,11 @@ public class AuthService {
      * generates new access token, and updates session last used timestamp.
      *
      * @param request the refresh token request containing the refresh token
-     * @return TokenResponse containing new access token and expiration time
+     * @return TokenResponseDTO containing new access token and expiration time
      * @throws SmartRoadException if refresh token is invalid, expired, or session not active
      */
     @Transactional
-    public TokenResponse refreshToken(RefreshTokenRequest request) throws SmartRoadException {
+    public TokenResponseDTO refreshToken(RefreshTokenRequestDTO request) throws SmartRoadException {
         SessionEntity session = sessionRepository.findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_UNAUTHORIZED, "invalid.refresh.token"));
 
@@ -191,7 +199,7 @@ public class AuthService {
 
         log.info("Token refreshed for user: {}", user.getEmailId());
 
-        return TokenResponse.builder()
+        return TokenResponseDTO.builder()
                 .accessToken(newAccessToken)
                 .tokenType("Bearer")
                 .expiresIn(jwtService.getAccessTokenExpiration() / 1000)
@@ -251,10 +259,10 @@ public class AuthService {
      * Fetches user details by ID and maps to response DTO.
      *
      * @param userId the UUID of the user to retrieve
-     * @return UserResponse containing user profile details
+     * @return UserResponseDTO containing user profile details
      * @throws SmartRoadException if user not found
      */
-    public UserResponse getCurrentUser(UUID userId) throws SmartRoadException {
+    public UserResponseDTO getCurrentUser(UUID userId) throws SmartRoadException {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
 
@@ -270,7 +278,7 @@ public class AuthService {
      * @throws SmartRoadException if OTP generation fails
      */
     @Transactional
-    public void forgotPassword(ForgotPasswordRequest request) throws SmartRoadException {
+    public void forgotPassword(ForgotPasswordRequestDTO request) throws SmartRoadException {
         UserEntity user = userRepository.findByEmailId(request.getEmail())
                 .orElse(null);
 
@@ -291,7 +299,7 @@ public class AuthService {
      * @throws SmartRoadException if password mismatch, OTP invalid, or user not found
      */
     @Transactional
-    public void resetPassword(ResetPasswordRequest request) throws SmartRoadException {
+    public void resetPassword(ResetPasswordRequestDTO request) throws SmartRoadException {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "passwords.do.not.match");
         }
@@ -322,7 +330,7 @@ public class AuthService {
      * @throws SmartRoadException if current password incorrect, password mismatch, or user not found
      */
     @Transactional
-    public void changePassword(UUID userId, ChangePasswordRequest request) throws SmartRoadException {
+    public void changePassword(UUID userId, ChangePasswordRequestDTO request) throws SmartRoadException {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "passwords.do.not.match");
         }
@@ -357,16 +365,16 @@ public class AuthService {
      * @throws SmartRoadException if OTP invalid or user not found
      */
     @Transactional
-    public void verifyOtp(VerifyOtpRequest request) throws SmartRoadException {
+    public void verifyOtp(VerifyOtpRequestDTO request) throws SmartRoadException {
         otpService.verifyOtp(request.getEmail(), request.getOtp(), request.getFlow());
 
         if (request.getFlow() == OtpFlow.EMAIL_VERIFICATION || request.getFlow() == OtpFlow.SIGNUP_VERIFICATION) {
             UserEntity user = userRepository.findByEmailId(request.getEmail())
                     .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
 
-            user.setEmailVerified(true);
-            if (user.getStatus() == UserStatus.PENDING) {
-                user.setStatus(UserStatus.ACTIVE);
+            user.setEmailVerifiedYn(true);
+            if (user.getStatus() == UserStatusEnum.PENDING) {
+                user.setStatus(UserStatusEnum.ACTIVE);
             }
             userRepository.save(user);
 
@@ -385,7 +393,7 @@ public class AuthService {
      * @throws SmartRoadException if resend cooldown not elapsed
      */
     @Transactional
-    public void resendOtp(ResendOtpRequest request) throws SmartRoadException {
+    public void resendOtp(ResendOtpRequestDTO request) throws SmartRoadException {
         if (!otpService.canResendOtp(request.getEmail(), request.getFlow())) {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "please.wait.before.requesting.another.otp");
         }
@@ -397,14 +405,14 @@ public class AuthService {
     }
 
     /**
-     * Maps User entity to UserResponse DTO.
+     * Maps User entity to UserResponseDTO DTO.
      * Converts user entity fields to response format.
      *
      * @param user the User entity to map
-     * @return UserResponse DTO containing user details
+     * @return UserResponseDTO DTO containing user details
      */
-    private UserResponse mapToUserResponse(UserEntity user) throws SmartRoadException {
-        return UserResponse.builder()
+    private UserResponseDTO mapToUserResponse(UserEntity user) throws SmartRoadException {
+        return UserResponseDTO.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
@@ -414,7 +422,7 @@ public class AuthService {
                 .role(user.getRole())
                 .userType(user.getUserType())
                 .status(user.getStatus())
-                .emailVerified(user.getEmailVerified())
+                .emailVerified(user.getEmailVerifiedYn())
                 .build();
     }
 
@@ -429,14 +437,14 @@ public class AuthService {
      */
     private void createAuditLog(UUID actionForUserId, UUID requestedBy, String action, String status) throws SmartRoadException {
         UserAuditLogEntity auditLog = UserAuditLogEntity.builder()
-                .id(UUID.randomUUID())
                 .userId(actionForUserId)
-                .performedBy(requestedBy)
-                .action(action)
-                .status(status)
-                .createdBy(SYSTEM_USER_ID)
-                .modifiedBy(SYSTEM_USER_ID)
+                .requestedBy(requestedBy.toString())
+                .actionDone(action)
+                .ntStatus(status)
                 .build();
+
+        auditLog.setCreatedBy(SYSTEM_USER_ID);
+        auditLog.setModifiedBy(SYSTEM_USER_ID);
 
         auditLogRepository.save(auditLog);
     }

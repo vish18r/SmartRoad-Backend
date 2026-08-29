@@ -1,8 +1,9 @@
 package com.nextenti.services.api.rest.project;
 
-import com.nextenti.services.common.exception.NextentiException;
-import com.nextenti.services.core.dto.project.ProjectRequest;
-import com.nextenti.services.core.dto.project.ProjectResponse;
+import com.nextenti.services.api.utils.RequestUtil;
+import com.nextenti.services.common.exception.SmartRoadException;
+import com.nextenti.services.core.dto.project.ProjectRequestDTO;
+import com.nextenti.services.core.dto.project.ProjectResponseDTO;
 import com.nextenti.services.core.service.project.ProjectService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -54,17 +55,18 @@ public class ProjectController {
      *
      * @param request the project creation request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the created {@link ProjectResponse}
+     * @return {@link ResponseEntity} containing the created {@link ProjectResponseDTO}
      * @throws NextentiException if creation fails
      */
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Object> createProject(@RequestBody @Valid ProjectRequest request,
-                                                @RequestHeader HttpHeaders headers) throws NextentiException {
+    public ResponseEntity<Object> createProject(@RequestBody @Valid ProjectRequestDTO request,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside createProjectEntity method--");
 
-        ProjectResponse response = projectService.create(request);
+        UUID userId = RequestUtil.extractUserId();
+        ProjectResponseDTO response = projectService.create(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -74,16 +76,17 @@ public class ProjectController {
      *
      * @param organizationId the UUID of the organization
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing a list of {@link ProjectResponse}
+     * @return {@link ResponseEntity} containing a list of {@link ProjectResponseDTO}
      * @throws NextentiException if retrieval fails
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> listProjects(@RequestParam UUID organizationId,
-                                               @RequestHeader HttpHeaders headers) throws NextentiException {
+                                               @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside listProjects method--");
 
-        List<ProjectResponse> response = projectService.list(organizationId);
+        UUID userId = RequestUtil.extractUserId();
+        List<ProjectResponseDTO> response = projectService.list(userId, organizationId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -93,16 +96,16 @@ public class ProjectController {
      *
      * @param id the UUID of the project
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the {@link ProjectResponse}
+     * @return {@link ResponseEntity} containing the {@link ProjectResponseDTO}
      * @throws NextentiException if project not found
      */
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> getProject(@PathVariable UUID id,
-                                             @RequestHeader HttpHeaders headers) throws NextentiException {
+                                             @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside getProjectEntity method--");
 
-        ProjectResponse response = projectService.getById(id);
+        ProjectResponseDTO response = projectService.getById(id);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -113,18 +116,19 @@ public class ProjectController {
      * @param id the UUID of the project
      * @param request the project update request
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} containing the updated {@link ProjectResponse}
+     * @return {@link ResponseEntity} containing the updated {@link ProjectResponseDTO}
      * @throws NextentiException if project not found or update fails
      */
     @PutMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> updateProject(@PathVariable UUID id,
-                                                @RequestBody @Valid ProjectRequest request,
-                                                @RequestHeader HttpHeaders headers) throws NextentiException {
+                                                @RequestBody @Valid ProjectRequestDTO request,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside updateProjectEntity method--");
 
-        ProjectResponse response = projectService.update(id, request);
+        UUID userId = RequestUtil.extractUserId();
+        ProjectResponseDTO response = projectService.update(userId, id, request);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
