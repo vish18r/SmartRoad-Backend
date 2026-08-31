@@ -1,5 +1,6 @@
 package com.nextenti.services.api.rest.auth;
 
+import com.nextenti.services.api.utils.RequestUtil;
 import com.nextenti.services.common.exception.SmartRoadException;
 import com.nextenti.services.core.dto.auth.ChangePasswordRequestDTO;
 import com.nextenti.services.core.dto.auth.ForgotPasswordRequestDTO;
@@ -199,8 +200,105 @@ public class AuthController {
                                                  @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside changePassword method--");
 
-        // Note: Extract user ID from authenticated principal in actual implementation
-        authService.changePassword(UUID.randomUUID(), request);
+        UUID userId = RequestUtil.extractUserId();
+        authService.changePassword(userId, request);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    /**
+     * Authenticates a user and returns tokens.
+     *
+     * @param request the login request containing identifier and password
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK containing {@link AuthResponseDTO}
+     * @throws SmartRoadException if authentication fails
+     */
+    @PostMapping(path = "/login", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Object> login(@RequestBody @Valid LoginRequestDTO request,
+                                        @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside login method--");
+
+        var response = authService.login(request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Refreshes the access token using a valid refresh token.
+     *
+     * @param request the refresh token request
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK containing {@link TokenResponseDTO}
+     * @throws SmartRoadException if token refresh fails
+     */
+    @PostMapping(path = "/refresh", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Object> refresh(@RequestBody @Valid RefreshTokenRequestDTO request,
+                                          @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside refresh method--");
+
+        var response = authService.refreshToken(request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Retrieves the current authenticated user's profile.
+     *
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK containing {@link UserResponseDTO}
+     * @throws SmartRoadException if user not found
+     */
+    @GetMapping(path = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Object> getCurrentUser(@RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside getCurrentUser method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        var response = authService.getCurrentUser(userId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Logs out the current user by revoking their session.
+     *
+     * @param request the logout request containing refresh token
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK
+     * @throws SmartRoadException if logout fails
+     */
+    @PostMapping(path = "/logout", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Object> logout(@RequestBody RefreshTokenRequestDTO request,
+                                         @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside logout method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        authService.logout(userId, request.getRefreshToken());
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    /**
+     * Logs out the current user from all devices by revoking all sessions.
+     *
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK
+     * @throws SmartRoadException if logout fails
+     */
+    @PostMapping(path = "/logout-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Object> logoutAll(@RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside logoutAll method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        authService.logoutAll(userId);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

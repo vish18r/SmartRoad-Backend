@@ -56,7 +56,7 @@ public class ProjectController {
      * @param request the project creation request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the created {@link ProjectResponseDTO}
-     * @throws NextentiException if creation fails
+     * @throws SmartRoadException if creation fails
      */
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -77,7 +77,7 @@ public class ProjectController {
      * @param organizationId the UUID of the organization
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing a list of {@link ProjectResponseDTO}
-     * @throws NextentiException if retrieval fails
+     * @throws SmartRoadException if retrieval fails
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -97,7 +97,7 @@ public class ProjectController {
      * @param id the UUID of the project
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the {@link ProjectResponseDTO}
-     * @throws NextentiException if project not found
+     * @throws SmartRoadException if project not found
      */
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -117,7 +117,7 @@ public class ProjectController {
      * @param request the project update request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the updated {@link ProjectResponseDTO}
-     * @throws NextentiException if project not found or update fails
+     * @throws SmartRoadException if project not found or update fails
      */
     @PutMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)

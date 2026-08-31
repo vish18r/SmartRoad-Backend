@@ -1,7 +1,10 @@
 package com.nextenti.services.domain.repository;
 
+import com.nextenti.services.common.enums.ProjectStatus;
 import com.nextenti.services.domain.entity.ProjectEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -31,4 +34,22 @@ public interface ProjectRepository extends JpaRepository<ProjectEntity, UUID> {
      * @return optional containing the matching project, or empty if not found
      */
     Optional<ProjectEntity> findByIdAndOrganizationIdAndArchivedFalse(UUID id, UUID organizationId);
+
+    /**
+     * Counts active (non-completed, non-cancelled) projects in an organization.
+     *
+     * @param organizationId the organization UUID
+     * @return count of active projects
+     */
+    @Query("SELECT COUNT(p) FROM ProjectEntity p WHERE p.organizationId = :organizationId AND p.archived = FALSE AND p.status IN ('ACTIVE', 'ON_HOLD', 'DRAFT')")
+    long countActiveProjectsByOrganization(@Param("organizationId") UUID organizationId);
+
+    /**
+     * Counts completed projects in an organization.
+     *
+     * @param organizationId the organization UUID
+     * @return count of completed projects
+     */
+    @Query("SELECT COUNT(p) FROM ProjectEntity p WHERE p.organizationId = :organizationId AND p.archived = FALSE AND p.status = 'COMPLETED'")
+    long countCompletedProjectsByOrganization(@Param("organizationId") UUID organizationId);
 }

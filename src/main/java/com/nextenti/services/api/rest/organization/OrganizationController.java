@@ -56,7 +56,7 @@ public class OrganizationController {
      * @param request the organization creation request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the created {@link OrganizationResponseDTO}
-     * @throws NextentiException if creation fails
+     * @throws SmartRoadException if creation fails
      */
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -76,7 +76,7 @@ public class OrganizationController {
      *
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing a list of {@link OrganizationResponseDTO}
-     * @throws NextentiException if retrieval fails
+     * @throws SmartRoadException if retrieval fails
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -93,7 +93,7 @@ public class OrganizationController {
      *
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing a list of {@link OrganizationResponseDTO}
-     * @throws NextentiException if retrieval fails
+     * @throws SmartRoadException if retrieval fails
      */
     @GetMapping(path = "/my-organizations", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -112,7 +112,7 @@ public class OrganizationController {
      * @param id the UUID of the organization
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the {@link OrganizationResponseDTO}
-     * @throws NextentiException if organization not found
+     * @throws SmartRoadException if organization not found
      */
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -133,7 +133,7 @@ public class OrganizationController {
      * @param request the organization update request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the updated {@link OrganizationResponseDTO}
-     * @throws NextentiException if organization not found or update fails
+     * @throws SmartRoadException if organization not found or update fails
      */
     @PutMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -155,7 +155,7 @@ public class OrganizationController {
      * @param id the UUID of the organization
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} with HTTP 200 OK on successful deletion
-     * @throws NextentiException if organization not found or deletion fails
+     * @throws SmartRoadException if organization not found or deletion fails
      */
     @DeleteMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")

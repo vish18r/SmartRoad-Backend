@@ -59,7 +59,7 @@ public class RoadController {
      * @param request the road creation request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the created {@link RoadResponseDTO}
-     * @throws NextentiException if project not found or creation fails
+     * @throws SmartRoadException if project not found or creation fails
      */
     @PostMapping(path = "/projects/{projectId}/roads", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -81,7 +81,7 @@ public class RoadController {
      * @param projectId the UUID of the project
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing a list of {@link RoadResponseDTO}
-     * @throws NextentiException if project not found or retrieval fails
+     * @throws SmartRoadException if project not found or retrieval fails
      */
     @GetMapping(path = "/projects/{projectId}/roads", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -101,7 +101,7 @@ public class RoadController {
      * @param id the UUID of the road
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the {@link RoadResponseDTO}
-     * @throws NextentiException if road not found
+     * @throws SmartRoadException if road not found
      */
     @GetMapping(path = "/roads/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -122,7 +122,7 @@ public class RoadController {
      * @param request the road update request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the updated {@link RoadResponseDTO}
-     * @throws NextentiException if road not found or update fails
+     * @throws SmartRoadException if road not found or update fails
      */
     @PutMapping(path = "/roads/{id}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -144,7 +144,7 @@ public class RoadController {
      * @param id the UUID of the road
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} with HTTP 200 OK on successful deletion
-     * @throws NextentiException if road not found or deletion fails
+     * @throws SmartRoadException if road not found or deletion fails
      */
     @DeleteMapping(path = "/roads/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -165,7 +165,7 @@ public class RoadController {
      * @param request the road section creation request
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing the created {@link RoadSectionResponseDTO}
-     * @throws NextentiException if road not found or creation fails
+     * @throws SmartRoadException if road not found or creation fails
      */
     @PostMapping(path = "/roads/{roadId}/sections", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -187,7 +187,7 @@ public class RoadController {
      * @param roadId the UUID of the road
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing a list of {@link RoadSectionResponseDTO}
-     * @throws NextentiException if road not found or retrieval fails
+     * @throws SmartRoadException if road not found or retrieval fails
      */
     @GetMapping(path = "/roads/{roadId}/sections", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
