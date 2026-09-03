@@ -23,6 +23,7 @@
 
 ---
 
+
 ## **STANDARDS APPLIED TO ALL ENTITIES**
 
 ✅ **Class Names**: All end with `Entity`  
