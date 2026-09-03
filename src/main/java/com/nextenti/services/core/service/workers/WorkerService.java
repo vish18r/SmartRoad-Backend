@@ -64,9 +64,6 @@ public class WorkerService {
         }
 
         WorkerEntity entity = workerMapper.toWorkerEntity(request);
-        entity.setId(UUID.randomUUID());
-        entity.setCreatedBy(userId);
-        entity.setModifiedBy(userId);
         entity.setIsDeleted(false);
 
         workerRepository.save(entity);

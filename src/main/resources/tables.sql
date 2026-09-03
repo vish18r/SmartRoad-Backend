@@ -932,7 +932,7 @@ CREATE TABLE IF NOT EXISTS "sr_vehicle_maintenance" (
     "modified_by" UUID NOT NULL,
     "date_modified" TIMESTAMPTZ NOT NULL,
     "db_version" INT NOT NULL DEFAULT 1,
-    
+
     "vehicle_id" UUID NOT NULL,
     "maintenance_type" VARCHAR(50) NOT NULL,
     "maintenance_date" DATE NOT NULL,

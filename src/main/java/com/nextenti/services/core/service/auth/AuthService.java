@@ -78,20 +78,15 @@ public class AuthService {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "phone.number.already.registered");
         }
 
-        UserEntity user = UserEntity.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .emailId(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
-                .countryCode(request.getCountryCode())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .status(UserStatusEnum.PENDING)
-                .emailVerifiedYn(false)
-                .build();
-
-        user.setId(UUID.randomUUID());
-        user.setCreatedBy(SYSTEM_USER_ID);
-        user.setModifiedBy(SYSTEM_USER_ID);
+        UserEntity user = new UserEntity();
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setEmailId(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setCountryCode(request.getCountryCode());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setStatus(UserStatusEnum.PENDING);
+        user.setEmailVerifiedYn(false);
 
         userRepository.save(user);
 

@@ -51,10 +51,7 @@ public class ProjectService {
     public ProjectResponseDTO create(UUID u, ProjectRequestDTO r) throws SmartRoadException {
         orgs.requireMember(u, r.organizationId());
         ProjectEntity p = new ProjectEntity();
-        p.setId(UUID.randomUUID());
         p.setOrganizationId(r.organizationId());
-        p.setCreatedBy(u);
-        p.setModifiedBy(u);
         apply(p, r);
         return map(projects.save(p));
     }

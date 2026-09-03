@@ -9,6 +9,7 @@ import com.nextenti.services.core.dto.auth.RefreshTokenRequestDTO;
 import com.nextenti.services.core.dto.auth.ResendOtpRequestDTO;
 import com.nextenti.services.core.dto.auth.ResetPasswordRequestDTO;
 import com.nextenti.services.core.dto.auth.SendOtpRequestDTO;
+import com.nextenti.services.core.dto.auth.SignupRequestDTO;
 import com.nextenti.services.core.dto.auth.VerifyOtpRequestDTO;
 import com.nextenti.services.core.service.auth.AuthService;
 import com.nextenti.services.core.service.auth.OtpService;
@@ -66,9 +67,11 @@ public class AuthController {
     @PostMapping(path = {"/register", "/signup"}, produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Object> register(@RequestBody @Valid SendOtpRequestDTO request,
+    public ResponseEntity<Object> register(@RequestBody @Valid SignupRequestDTO request,
                                            @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside register method--");
+
+        authService.signup(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

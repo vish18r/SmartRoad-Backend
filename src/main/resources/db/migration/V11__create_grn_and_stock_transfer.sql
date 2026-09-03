@@ -5,7 +5,7 @@ CREATE TABLE sr_grn (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     grn_number VARCHAR(100) NOT NULL UNIQUE,
     purchase_order_id UUID NOT NULL REFERENCES sr_purchase_orders(id) ON DELETE CASCADE,
-    project_id UUID NOT NULL REFERENCES sr_projects(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     material_id UUID NOT NULL REFERENCES sr_materials(id) ON DELETE CASCADE,
     vendor_id UUID NOT NULL,
     ordered_quantity NUMERIC(18, 3) NOT NULL,
@@ -30,8 +30,8 @@ CREATE INDEX idx_grn_status ON sr_grn(status);
 -- Create sr_stock_transfers table
 CREATE TABLE sr_stock_transfers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    source_project_id UUID NOT NULL REFERENCES sr_projects(id) ON DELETE CASCADE,
-    destination_project_id UUID NOT NULL REFERENCES sr_projects(id) ON DELETE CASCADE,
+    source_project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    destination_project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     material_id UUID NOT NULL REFERENCES sr_materials(id) ON DELETE CASCADE,
     quantity_requested NUMERIC(18, 3) NOT NULL,
     quantity_transferred NUMERIC(18, 3),

@@ -11,7 +11,7 @@ import java.util.*;
 @Service public class ClientService {
  private final ClientRepository clients; private final OrganizationService organizations;
  public ClientService(ClientRepository clients, OrganizationService organizations){this.clients=clients;this.organizations=organizations;}
- @Transactional public ClientResponseDTO create(UUID user, ClientRequestDTO r) throws SmartRoadException { organizations.requireMember(user,r.organizationId()); ClientEntity c=new ClientEntity(); c.setId(UUID.randomUUID());c.setOrganizationId(r.organizationId());c.setCreatedBy(user);c.setModifiedBy(user);apply(c,r);return map(clients.save(c)); }
+ @Transactional public ClientResponseDTO create(UUID user, ClientRequestDTO r) throws SmartRoadException { organizations.requireMember(user,r.organizationId()); ClientEntity c=new ClientEntity(); c.setOrganizationId(r.organizationId());apply(c,r);return map(clients.save(c)); }
  @Transactional(readOnly=true) public List<ClientResponseDTO> list(UUID user,UUID org) throws SmartRoadException {organizations.requireMember(user,org);return clients.findByOrganizationIdAndActiveTrue(org).stream().map(this::map).toList();}
  @Transactional(readOnly=true) public ClientResponseDTO get(UUID user,UUID id,UUID org)throws SmartRoadException{return map(find(user,id,org));}
  @Transactional public ClientResponseDTO update(UUID user,UUID id,ClientRequestDTO r)throws SmartRoadException{ClientEntity c=find(user,id,r.organizationId());apply(c,r);c.setModifiedBy(user);return map(clients.save(c));}

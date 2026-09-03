@@ -62,10 +62,7 @@ public class RoadService {
     public RoadResponseDTO create(UUID u, UUID projectId, RoadRequestDTO r) throws SmartRoadException {
         ProjectEntity p = project(u, projectId);
         RoadEntity x = new RoadEntity();
-        x.setId(UUID.randomUUID());
         x.setProjectId(p.getId());
-        x.setCreatedBy(u);
-        x.setModifiedBy(u);
         apply(x, r);
         return map(roads.save(x));
     }
@@ -145,10 +142,7 @@ public class RoadService {
         RoadEntity road = road(roadId);
         project(u, road.getProjectId());
         RoadSectionEntity s = new RoadSectionEntity();
-        s.setId(UUID.randomUUID());
         s.setRoadId(roadId);
-        s.setCreatedBy(u);
-        s.setModifiedBy(u);
         apply(s, r);
         return sectionMap(sections.save(s));
     }

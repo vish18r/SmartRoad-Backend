@@ -3,7 +3,7 @@
 -- Create sr_vendors table
 CREATE TABLE sr_vendors (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES sr_organizations(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     vendor_name VARCHAR(255) NOT NULL,
     contact_person VARCHAR(255),
     phone VARCHAR(20),
@@ -29,7 +29,7 @@ CREATE INDEX idx_vendors_is_active ON sr_vendors(is_active);
 -- Create sr_materials table
 CREATE TABLE sr_materials (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES sr_organizations(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     material_code VARCHAR(100) NOT NULL UNIQUE,
     material_name VARCHAR(255) NOT NULL,
     unit VARCHAR(32) NOT NULL,
@@ -48,7 +48,7 @@ CREATE INDEX idx_materials_material_code ON sr_materials(material_code);
 -- Create sr_material_stock table
 CREATE TABLE sr_material_stock (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id UUID NOT NULL REFERENCES sr_projects(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     material_id UUID NOT NULL REFERENCES sr_materials(id) ON DELETE CASCADE,
     quantity_available NUMERIC(18, 3) NOT NULL DEFAULT 0,
     quantity_reserved NUMERIC(18, 3) DEFAULT 0,

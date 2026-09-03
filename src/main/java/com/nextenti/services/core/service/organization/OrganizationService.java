@@ -29,18 +29,12 @@ public class OrganizationService {
     public OrganizationResponseDTO create(UUID userId, OrganizationRequestDTO request) {
         OrganizationEntity organization = new OrganizationEntity();
         apply(organization, request);
-        organization.setId(UUID.randomUUID());
-        organization.setCreatedBy(userId);
-        organization.setModifiedBy(userId);
         organizations.save(organization);
 
         OrganizationMemberEntity owner = new OrganizationMemberEntity();
-        owner.setId(UUID.randomUUID());
         owner.setOrganizationId(organization.getId());
         owner.setUserId(userId);
         owner.setRole(UserRole.ADMIN.getValue());
-        owner.setCreatedBy(userId);
-        owner.setModifiedBy(userId);
         members.save(owner);
         return toResponse(organization);
     }
@@ -93,14 +87,11 @@ public class OrganizationService {
         OrganizationMemberEntity member = members.findByOrganizationIdAndUserIdAndActiveTrue(organizationId, request.userId()).orElse(null);
         if (member == null) {
             member = new OrganizationMemberEntity();
-            member.setId(UUID.randomUUID());
             member.setOrganizationId(organizationId);
             member.setUserId(request.userId());
-            member.setCreatedBy(actorId);
         }
         member.setRole(request.role().getValue());
         member.setActive(true);
-        member.setModifiedBy(actorId);
         members.save(member);
     }
 

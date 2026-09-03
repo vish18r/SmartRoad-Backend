@@ -45,18 +45,13 @@ public class OtpService {
         String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(1000000));
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
 
-        OtpEntity otpEntity = OtpEntity.builder()
-                .emailId(email)
-                .emailOtp(otp)
-                .flow(flow)
-                .expiresAt(expiresAt)
-                .active(true)
-                .retryCount(0)
-                .build();
-
-        otpEntity.setId(UUID.randomUUID());
-        otpEntity.setCreatedBy(UUID.randomUUID());
-        otpEntity.setModifiedBy(UUID.randomUUID());
+        OtpEntity otpEntity = new OtpEntity();
+        otpEntity.setEmailId(email);
+        otpEntity.setEmailOtp(otp);
+        otpEntity.setFlow(flow);
+        otpEntity.setExpiresAt(expiresAt);
+        otpEntity.setActive(true);
+        otpEntity.setRetryCount(0);
 
         otpRepository.save(otpEntity);
 
@@ -78,18 +73,13 @@ public class OtpService {
         String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(1000000));
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
 
-        OtpEntity otpEntity = OtpEntity.builder()
-                .phoneNumber(phoneNumber)
-                .phoneOtp(otp)
-                .flow(flow)
-                .expiresAt(expiresAt)
-                .active(true)
-                .retryCount(0)
-                .build();
-
-        otpEntity.setId(UUID.randomUUID());
-        otpEntity.setCreatedBy(UUID.randomUUID());
-        otpEntity.setModifiedBy(UUID.randomUUID());
+        OtpEntity otpEntity = new OtpEntity();
+        otpEntity.setPhoneNumber(phoneNumber);
+        otpEntity.setPhoneOtp(otp);
+        otpEntity.setFlow(flow);
+        otpEntity.setExpiresAt(expiresAt);
+        otpEntity.setActive(true);
+        otpEntity.setRetryCount(0);
 
         otpRepository.save(otpEntity);
 
