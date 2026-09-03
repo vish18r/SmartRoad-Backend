@@ -47,7 +47,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/auth/resend-otp", "/api/v1/auth/resend-verification").permitAll()
                         .requestMatchers("/api/v1/auth/otp/**").permitAll()
                         .requestMatchers("/api/v1/admin/cleanup/**").permitAll()
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/swagger-resources/**", "/v2/api-docs", "/webjars/**").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/swagger-resources/**", "/v2/api-docs", "/v3/api-docs", "/v3/api-docs/**", "/webjars/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
