@@ -4,19 +4,22 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import com.nextenti.services.common.enums.SessionStatus;
+import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * @author Vishal
- * @version 1.0
+ * JPA entity representing a user session stored in the sr_sessions table.
+ * Simplified entity without optimistic locking to avoid version conflicts.
  */
 @Entity
 @Table(name = "sr_sessions")
@@ -24,8 +27,24 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = true)
-public class SessionEntity extends SmartRoadBaseEntity {
+public class SessionEntity implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", nullable = false)
+    private UUID id;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "modified_by")
+    private UUID modifiedBy;
+
+    @Column(name = "date_created")
+    private java.util.Date dateCreated;
+
+    @Column(name = "date_modified")
+    private java.util.Date dateModified;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;

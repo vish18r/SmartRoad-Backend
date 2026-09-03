@@ -25,6 +25,7 @@ import com.nextenti.services.domain.repository.UserAuditLogRepository;
 import com.nextenti.services.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -95,8 +96,13 @@ public class AuthService {
         createAuditLog(user.getId(), SYSTEM_USER_ID, "SIGNUP", "SUCCESS");
 
         if (user.getPhoneNumber() != null) {
-            String otp = otpService.generateOtpForPhone(user.getPhoneNumber(), OtpFlow.SIGNUP_VERIFICATION);
-            log.info("OTP sent to phone {}: {}", user.getPhoneNumber(), otp);
+            otpService.generateOtpForPhone(user.getPhoneNumber(), OtpFlow.SIGNUP_VERIFICATION);
+            log.info("OTP sent to phone: {}", user.getPhoneNumber());
+        }
+
+        if (user.getEmailId() != null) {
+            otpService.generateOtp(user.getEmailId(), OtpFlow.SIGNUP_VERIFICATION);
+            log.info("OTP sent to email: {}", user.getEmailId());
         }
 
         log.info("User signed up successfully: {}", user.getEmailId());
@@ -381,7 +387,16 @@ public class AuthService {
             if (user.getStatus() == UserStatusEnum.PENDING) {
                 user.setStatus(UserStatusEnum.ACTIVE);
             }
-            userRepository.save(user);
+            try {
+                userRepository.saveAndFlush(user);
+            } catch (ObjectOptimisticLockingFailureException e) {
+                log.warn("Optimistic lock conflict, retrying: {}", e.getMessage());
+                user = userRepository.findById(user.getId()).orElseThrow();
+                if (user.getStatus() == UserStatusEnum.PENDING) {
+                    user.setStatus(UserStatusEnum.ACTIVE);
+                }
+                userRepository.saveAndFlush(user);
+            }
 
             createAuditLog(user.getId(), user.getId(), "OTP_VERIFIED", "SUCCESS");
 
