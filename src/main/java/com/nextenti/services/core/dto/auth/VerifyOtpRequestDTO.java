@@ -18,6 +18,7 @@ public class VerifyOtpRequestDTO {
 
     @Email(message = "Invalid email format")
     private String email;
+    private String phoneNumber;
     @Size(min = 6, max = 6, message = "OTP must be 6 digits")
     private String otp;
     @NotNull(message = "Flow is required")

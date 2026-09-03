@@ -17,6 +17,7 @@ public class ResendOtpRequestDTO {
 
     @Email(message = "Invalid email format")
     private String email;
+    private String phoneNumber;
     @NotNull(message = "Flow is required")
     private OtpFlow flow;
 

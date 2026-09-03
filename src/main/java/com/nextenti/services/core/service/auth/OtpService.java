@@ -28,6 +28,7 @@ public class OtpService {
     private static final int OTP_LENGTH = 6;
     private static final int OTP_EXPIRY_MINUTES = 10;
     private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     private final OtpRepository otpRepository;
     private final SecureRandom secureRandom = new SecureRandom();
@@ -52,6 +53,8 @@ public class OtpService {
         otpEntity.setExpiresAt(expiresAt);
         otpEntity.setActive(true);
         otpEntity.setRetryCount(0);
+        otpEntity.setCreatedBy(SYSTEM_USER_ID);
+        otpEntity.setModifiedBy(SYSTEM_USER_ID);
 
         otpRepository.save(otpEntity);
 
@@ -80,6 +83,8 @@ public class OtpService {
         otpEntity.setExpiresAt(expiresAt);
         otpEntity.setActive(true);
         otpEntity.setRetryCount(0);
+        otpEntity.setCreatedBy(SYSTEM_USER_ID);
+        otpEntity.setModifiedBy(SYSTEM_USER_ID);
 
         otpRepository.save(otpEntity);
 

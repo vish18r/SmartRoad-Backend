@@ -87,13 +87,16 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setStatus(UserStatusEnum.PENDING);
         user.setEmailVerifiedYn(false);
+        user.setCreatedBy(SYSTEM_USER_ID);
+        user.setModifiedBy(SYSTEM_USER_ID);
 
         userRepository.save(user);
 
         createAuditLog(user.getId(), SYSTEM_USER_ID, "SIGNUP", "SUCCESS");
 
-        if (user.getEmailId() != null) {
-            otpService.generateOtp(user.getEmailId(), OtpFlow.SIGNUP_VERIFICATION);
+        if (user.getPhoneNumber() != null) {
+            String otp = otpService.generateOtpForPhone(user.getPhoneNumber(), OtpFlow.SIGNUP_VERIFICATION);
+            log.info("OTP sent to phone {}: {}", user.getPhoneNumber(), otp);
         }
 
         log.info("User signed up successfully: {}", user.getEmailId());
@@ -352,51 +355,65 @@ public class AuthService {
     }
 
     /**
-     * Verifies OTP for email verification or signup flow.
-     * Validates OTP, marks email as verified, activates user account
+     * Verifies OTP for email or phone verification.
+     * Validates OTP, marks email/phone as verified, activates user account
      * if status is PENDING, and creates audit log entry.
      *
-     * @param request the verify OTP request containing email, OTP, and flow type
+     * @param request the verify OTP request containing email/phone, OTP, and flow type
      * @throws SmartRoadException if OTP invalid or user not found
      */
     @Transactional
     public void verifyOtp(VerifyOtpRequestDTO request) throws SmartRoadException {
-        otpService.verifyOtp(request.getEmail(), request.getOtp(), request.getFlow());
+        UserEntity user = null;
 
-        if (request.getFlow() == OtpFlow.EMAIL_VERIFICATION || request.getFlow() == OtpFlow.SIGNUP_VERIFICATION) {
-            UserEntity user = userRepository.findByEmailId(request.getEmail())
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            otpService.verifyOtp(request.getEmail(), request.getOtp(), request.getFlow());
+            user = userRepository.findByEmailId(request.getEmail())
                     .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
-
             user.setEmailVerifiedYn(true);
+        } else if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
+            otpService.verifyPhoneOtp(request.getPhoneNumber(), request.getOtp(), request.getFlow());
+            user = userRepository.findByPhoneNumber(request.getPhoneNumber())
+                    .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
+        }
+
+        if (user != null && (request.getFlow() == OtpFlow.EMAIL_VERIFICATION || request.getFlow() == OtpFlow.SIGNUP_VERIFICATION)) {
             if (user.getStatus() == UserStatusEnum.PENDING) {
                 user.setStatus(UserStatusEnum.ACTIVE);
             }
             userRepository.save(user);
 
-            createAuditLog(user.getId(), user.getId(), "EMAIL_VERIFIED", "SUCCESS");
+            createAuditLog(user.getId(), user.getId(), "OTP_VERIFIED", "SUCCESS");
 
-            log.info("Email verified for user: {}", user.getEmailId());
+            log.info("OTP verified for user: {}", user.getEmailId() != null ? user.getEmailId() : user.getPhoneNumber());
         }
     }
 
     /**
-     * Resends OTP to user's email for verification.
+     * Resends OTP to user's email or phone for verification.
      * Checks resend cooldown, invalidates previous OTPs,
      * generates new OTP, and logs the action.
      *
-     * @param request the resend OTP request containing email and flow type
+     * @param request the resend OTP request containing email/phone and flow type
      * @throws SmartRoadException if resend cooldown not elapsed
      */
     @Transactional
     public void resendOtp(ResendOtpRequestDTO request) throws SmartRoadException {
-        if (!otpService.canResendOtp(request.getEmail(), request.getFlow())) {
-            throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "please.wait.before.requesting.another.otp");
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            if (!otpService.canResendOtp(request.getEmail(), request.getFlow())) {
+                throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "please.wait.before.requesting.another.otp");
+            }
+            otpService.invalidatePreviousOtps(request.getEmail(), request.getFlow());
+            String otp = otpService.generateOtp(request.getEmail(), request.getFlow());
+            log.info("OTP resent to email: {} with flow: {}", request.getEmail(), request.getFlow());
+        } else if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
+            if (!otpService.canResendOtp(request.getPhoneNumber(), request.getFlow())) {
+                throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "please.wait.before.requesting.another.otp");
+            }
+            otpService.invalidatePreviousPhoneOtps(request.getPhoneNumber(), request.getFlow());
+            String otp = otpService.generateOtpForPhone(request.getPhoneNumber(), request.getFlow());
+            log.info("OTP resent to phone: {} with flow: {}", request.getPhoneNumber(), request.getFlow());
         }
-
-        otpService.invalidatePreviousOtps(request.getEmail(), request.getFlow());
-        otpService.generateOtp(request.getEmail(), request.getFlow());
-
-        log.info("OTP resent for: {} with flow: {}", request.getEmail(), request.getFlow());
     }
 
     /**
