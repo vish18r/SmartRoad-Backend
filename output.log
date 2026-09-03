@@ -1,0 +1,88 @@
+﻿Starting a Gradle Daemon, 20 busy and 2 incompatible and 9 stopped Daemons could not be reused, use --status for details
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :resolveMainClassName UP-TO-DATE
+
+> Task :bootRun
+22:55:28.932 [main] INFO com.nextenti.services.BackendApplication -- -------------------------------------------------------
+22:55:28.934 [main] INFO com.nextenti.services.BackendApplication -- |                                                     |
+22:55:28.934 [main] INFO com.nextenti.services.BackendApplication -- |                                                     |
+22:55:28.934 [main] INFO com.nextenti.services.BackendApplication -- |           APPLICATION START INITIATED               |
+22:55:28.934 [main] INFO com.nextenti.services.BackendApplication -- |                                                     |
+22:55:28.934 [main] INFO com.nextenti.services.BackendApplication -- |                                                     |
+22:55:28.934 [main] INFO com.nextenti.services.BackendApplication -- -------------------------------------------------------
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-09-03 22:55:29.544 [] INFO  c.n.services.BackendApplication - Starting BackendApplication using Java 24 with PID 33988 (C:\backend_Java\Nextenti-Backend\build\classes\java\main started by VishalRathod in C:\backend_Java\Nextenti-Backend)
+2026-09-03 22:55:29.545 [] INFO  c.n.services.BackendApplication - The following 1 profile is active: "dev"
+2026-09-03 22:55:30.072 [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-09-03 22:55:30.143 [] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 64 ms. Found 29 JPA repository interfaces.
+2026-09-03 22:55:30.878 [] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-03 22:55:30.890 [] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-03 22:55:30.890 [] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-09-03 22:55:30.948 [] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-09-03 22:55:30.949 [] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1359 ms
+2026-09-03 22:55:31.134 [] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-09-03 22:55:31.273 [] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@2c9cafa5
+2026-09-03 22:55:31.275 [] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-09-03 22:55:31.296 [] INFO  org.flywaydb.core.FlywayExecutor - Database: jdbc:postgresql://localhost:5432/nextenti_db (PostgreSQL 16.11)
+2026-09-03 22:55:31.343 [] INFO  o.f.core.internal.command.DbValidate - Successfully validated 14 migrations (execution time 00:00.027s)
+2026-09-03 22:55:31.393 [] INFO  o.f.core.internal.command.DbMigrate - Current version of schema "public": 14
+2026-09-03 22:55:31.396 [] INFO  o.f.core.internal.command.DbMigrate - Schema "public" is up to date. No migration necessary.
+2026-09-03 22:55:31.478 [] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-09-03 22:55:31.533 [] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.53.Final
+2026-09-03 22:55:31.558 [] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-09-03 22:55:31.777 [] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-09-03 22:55:31.818 [] WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-09-03 22:55:31.828 [] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 16.11
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-09-03 22:55:32.906 [] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-09-03 22:55:32.972 [] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-09-03 22:55:33.188 [] INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-09-03 22:55:33.680 [] INFO  o.s.s.c.a.a.c.InitializeAuthenticationProviderBeanManagerConfigurer$InitializeAuthenticationProviderManagerConfigurer - Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-09-03 22:55:33.680 [] WARN  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-09-03 22:55:34.304 [] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+.\gradlew.bat : WARNING: A terminally deprecated method in sun.misc.Unsafe 
+has been called
+At line:1 char:413
++ ... C:\backend_Java\Nextenti-Backend"; .\gradlew.bat bootRun 2>&1 | tee 
+o ...
++                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been ca 
+   lled:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: sun.misc.Unsafe::invokeCleaner has been called by 
+nonapi.io.github.classgraph.utils.FileUtils (file:/C:/Users/VishalRathod/.g
+radle/caches/modules-2/files-2.1/io.github.classgraph/classgraph/4.8.149/4b
+c2f188bc9001473d4a26ac488c2ae1a3e906de/classgraph-4.8.149.jar)
+WARNING: Please consider reporting this to the maintainers of class 
+nonapi.io.github.classgraph.utils.FileUtils
+WARNING: sun.misc.Unsafe::invokeCleaner will be removed in a future release
+2026-09-03 22:55:35.092 [] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-03 22:55:35.098 [] INFO  c.n.services.BackendApplication - Started BackendApplication in 6.068 seconds (process running for 6.363)
+2026-09-03 22:55:35.102 [] INFO  c.n.services.BackendApplication - -------------------------------------------------------
+2026-09-03 22:55:35.102 [] INFO  c.n.services.BackendApplication - |                                                     |
+2026-09-03 22:55:35.102 [] INFO  c.n.services.BackendApplication - |                                                     |
+2026-09-03 22:55:35.102 [] INFO  c.n.services.BackendApplication - |               APPLICATION STARTED                   |
+2026-09-03 22:55:35.102 [] INFO  c.n.services.BackendApplication - |                                                     |
+2026-09-03 22:55:35.102 [] INFO  c.n.services.BackendApplication - |                                                     |
+2026-09-03 22:55:35.102 [] INFO  c.n.services.BackendApplication - -------------------------------------------------------
+2026-09-03 22:55:40.190 [] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-03 22:55:40.190 [] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-09-03 22:55:40.192 [] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2 ms

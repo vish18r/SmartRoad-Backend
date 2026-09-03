@@ -1,4 +1,4 @@
-package com.nextenti.services;
+package com.smartroad.services;
 
 import org.junit.jupiter.api.Test;
 
