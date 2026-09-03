@@ -17,7 +17,7 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
     Optional<UserEntity> findByPhoneNumber(String phoneNumber);
 
-    @Query("SELECT u FROM UserEntity u WHERE u.emailId = :identifier OR u.phoneNumber = :identifier")
+    @Query("SELECT u FROM UserEntity u WHERE u.emailId = :identifier OR u.phoneNumber = :identifier OR CAST(u.id AS string) = :identifier")
     Optional<UserEntity> findByIdentifier(@Param("identifier") String identifier);
 
     Optional<UserEntity> findByEmailIdAndStatus(String emailId, UserStatus status);
