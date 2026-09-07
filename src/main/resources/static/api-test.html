@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartRoad API Testing</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; margin-bottom: 30px; border-radius: 8px; }
+        header h1 { font-size: 28px; margin-bottom: 5px; }
+        header p { opacity: 0.9; font-size: 14px; }
+        .endpoints { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .endpoint { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; }
+        .endpoint h3 { color: #60a5fa; margin-bottom: 15px; font-size: 16px; }
+        .endpoint-method { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-bottom: 10px; }
+        .method-post { background: #059669; }
+        .method-get { background: #3b82f6; }
+        .label { font-size: 12px; font-weight: 600; color: #cbd5e1; margin-top: 10px; }
+        input, textarea { width: 100%; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #e2e8f0; font-family: monospace; font-size: 12px; margin-top: 5px; }
+        textarea { min-height: 80px; resize: vertical; }
+        .button-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #64748b; color: white; }
+        .btn-secondary:hover { background: #475569; }
+        .response { background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 15px; margin-top: 15px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .response-success { border-left: 4px solid #10b981; }
+        .response-error { border-left: 4px solid #ef4444; }
+        .info-box { background: #1e3a8a; border-left: 4px solid #3b82f6; padding: 15px; margin-bottom: 20px; border-radius: 4px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔌 SmartRoad API Testing</h1>
+            <p>Test all authentication and OTP endpoints directly in the browser</p>
+        </header>
+
+        <div class="info-box">
+            ℹ️ Click "Send Request" to test each endpoint. Responses will appear below.
+        </div>
+
+        <div class="endpoints">
+            <!-- Register Endpoint -->
+            <div class="endpoint">
+                <h3>User Registration</h3>
+                <span class="endpoint-method method-post">POST</span>
+                <div class="label">Endpoint:</div>
+                <input type="text" value="/api/v1/auth/register" readonly>
+
+                <div class="label">Request Body:</div>
+                <textarea id="register-body" placeholder="Enter JSON">{
+  "firstName": "Test",
+  "lastName": "User",
+  "email": "test@example.com",
+  "phoneNumber": "9876543210",
+  "countryCode": "+91",
+  "password": "Password123!",
+  "confirmPassword": "Password123!"
+}</textarea>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="sendRequest('POST', '/api/v1/auth/register', 'register-body', 'register-response')">Send Request</button>
+                    <button class="btn-secondary" onclick="clearResponse('register-response')">Clear</button>
+                </div>
+                <div id="register-response" class="response"></div>
+            </div>
+
+            <!-- Login Endpoint -->
+            <div class="endpoint">
+                <h3>User Login</h3>
+                <span class="endpoint-method method-post">POST</span>
+                <div class="label">Endpoint:</div>
+                <input type="text" value="/api/v1/auth/login" readonly>
+
+                <div class="label">Request Body:</div>
+                <textarea id="login-body" placeholder="Enter JSON">{
+  "identifier": "test@example.com",
+  "password": "Password123!"
+}</textarea>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="sendRequest('POST', '/api/v1/auth/login', 'login-body', 'login-response')">Send Request</button>
+                    <button class="btn-secondary" onclick="clearResponse('login-response')">Clear</button>
+                </div>
+                <div id="login-response" class="response"></div>
+            </div>
+
+            <!-- Verify OTP Endpoint -->
+            <div class="endpoint">
+                <h3>Verify OTP</h3>
+                <span class="endpoint-method method-post">POST</span>
+                <div class="label">Endpoint:</div>
+                <input type="text" value="/api/v1/auth/verify-otp" readonly>
+
+                <div class="label">Request Body:</div>
+                <textarea id="verify-otp-body" placeholder="Enter JSON">{
+  "email": "test@example.com",
+  "otp": "123456"
+}</textarea>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="sendRequest('POST', '/api/v1/auth/verify-otp', 'verify-otp-body', 'verify-otp-response')">Send Request</button>
+                    <button class="btn-secondary" onclick="clearResponse('verify-otp-response')">Clear</button>
+                </div>
+                <div id="verify-otp-response" class="response"></div>
+            </div>
+
+            <!-- Health Check -->
+            <div class="endpoint">
+                <h3>Health Check</h3>
+                <span class="endpoint-method method-get">GET</span>
+                <div class="label">Endpoint:</div>
+                <input type="text" value="/api/v1/health" readonly>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="sendRequest('GET', '/api/v1/health', null, 'health-response')">Send Request</button>
+                    <button class="btn-secondary" onclick="clearResponse('health-response')">Clear</button>
+                </div>
+                <div id="health-response" class="response"></div>
+            </div>
+
+            <!-- Resend OTP -->
+            <div class="endpoint">
+                <h3>Resend OTP</h3>
+                <span class="endpoint-method method-post">POST</span>
+                <div class="label">Endpoint:</div>
+                <input type="text" value="/api/v1/auth/resend-otp" readonly>
+
+                <div class="label">Request Body:</div>
+                <textarea id="resend-otp-body" placeholder="Enter JSON">{
+  "email": "test@example.com"
+}</textarea>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="sendRequest('POST', '/api/v1/auth/resend-otp', 'resend-otp-body', 'resend-otp-response')">Send Request</button>
+                    <button class="btn-secondary" onclick="clearResponse('resend-otp-response')">Clear</button>
+                </div>
+                <div id="resend-otp-response" class="response"></div>
+            </div>
+
+            <!-- Verify Email -->
+            <div class="endpoint">
+                <h3>Verify Email</h3>
+                <span class="endpoint-method method-post">POST</span>
+                <div class="label">Endpoint:</div>
+                <input type="text" value="/api/v1/auth/verify-email" readonly>
+
+                <div class="label">Request Body:</div>
+                <textarea id="verify-email-body" placeholder="Enter JSON">{
+  "email": "test@example.com",
+  "token": "verification-token"
+}</textarea>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="sendRequest('POST', '/api/v1/auth/verify-email', 'verify-email-body', 'verify-email-response')">Send Request</button>
+                    <button class="btn-secondary" onclick="clearResponse('verify-email-response')">Clear</button>
+                </div>
+                <div id="verify-email-response" class="response"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        async function sendRequest(method, endpoint, bodyId, responseId) {
+            const responseEl = document.getElementById(responseId);
+            responseEl.textContent = '⏳ Sending request...';
+            responseEl.className = 'response';
+
+            try {
+                const options = {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+
+                if (bodyId) {
+                    const bodyText = document.getElementById(bodyId).value;
+                    options.body = bodyText;
+                }
+
+                const response = await fetch(API_BASE + endpoint, options);
+                const data = await response.json();
+
+                responseEl.textContent = JSON.stringify(data, null, 2);
+                responseEl.className = response.ok ? 'response response-success' : 'response response-error';
+            } catch (error) {
+                responseEl.textContent = '❌ Error: ' + error.message;
+                responseEl.className = 'response response-error';
+            }
+        }
+
+        function clearResponse(responseId) {
+            const responseEl = document.getElementById(responseId);
+            responseEl.textContent = '';
+            responseEl.className = 'response';
+        }
+    </script>
+</body>
+</html>
