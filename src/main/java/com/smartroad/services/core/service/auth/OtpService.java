@@ -9,6 +9,7 @@ import com.smartroad.services.domain.entity.OtpEntity;
 import com.smartroad.services.domain.repository.OtpRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * Generates, delivers, and verifies purpose-specific OTPs for both email and
+ * phone channels. OTP expiry and delivery are shared across every OTP flow
+ * ({@link OtpFlow}) so new flows can reuse this service without duplicating
+ * generation, expiry, or verification logic.
+ *
  * @author Vishal
  * @version 1.0
  */
@@ -27,9 +33,11 @@ import java.util.UUID;
 public class OtpService {
 
     private static final int OTP_LENGTH = 6;
-    private static final int OTP_EXPIRY_MINUTES = 10;
     private static final int MAX_RETRY_ATTEMPTS = 3;
     private static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
+    @Value("${otp.expiry-minutes:10}")
+    private int otpExpiryMinutes;
 
     private final OtpRepository otpRepository;
     private final NotificationService notificationService;
@@ -37,17 +45,18 @@ public class OtpService {
 
     /**
      * Generates a 6-digit OTP for email verification.
-     * Creates OTP record with 10-minute expiration, saves to database,
-     * and sends via email notification.
+     * Creates an OTP record with the configured expiry (otp.expiry-minutes),
+     * saves it to the database, and sends it via email notification.
      *
      * @param email the email address to send OTP to
      * @param flow the OTP flow type (e.g., SIGNUP_VERIFICATION, PASSWORD_RESET)
      * @return the generated 6-digit OTP string
      * @throws SmartRoadException if OTP delivery fails
      */
+    @Transactional
     public String generateOtp(String email, OtpFlow flow) throws SmartRoadException {
         String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(1000000));
-        OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
+        OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(otpExpiryMinutes);
 
         OtpEntity otpEntity = new OtpEntity();
         otpEntity.setEmailId(email);
@@ -69,8 +78,8 @@ public class OtpService {
 
     /**
      * Generates a 6-digit OTP for phone number verification.
-     * Creates OTP record with 10-minute expiration, saves to database,
-     * and sends via SMS notification.
+     * Creates an OTP record with the configured expiry (otp.expiry-minutes),
+     * saves it to the database, and sends it via SMS notification.
      *
      * @param phoneNumber the phone number to send OTP to
      * @param flow the OTP flow type (e.g., SIGNUP_VERIFICATION, PASSWORD_RESET)
@@ -80,7 +89,7 @@ public class OtpService {
     @Transactional
     public String generateOtpForPhone(String phoneNumber, OtpFlow flow) throws SmartRoadException {
         String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(1000000));
-        OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
+        OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(otpExpiryMinutes);
 
         OtpEntity otpEntity = new OtpEntity();
         otpEntity.setPhoneNumber(phoneNumber);
