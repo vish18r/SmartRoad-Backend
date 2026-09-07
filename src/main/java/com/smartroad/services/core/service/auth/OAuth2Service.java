@@ -68,7 +68,6 @@ public class OAuth2Service {
                 .expiresAt(expiresAt)
                 .build();
 
-        oauthState.setId(UUID.randomUUID());
         oauthState.setCreatedBy(SYSTEM_USER_ID);
         oauthState.setModifiedBy(SYSTEM_USER_ID);
 
@@ -138,7 +137,6 @@ public class OAuth2Service {
                 .expiresAt(OffsetDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))
                 .build();
 
-        session.setId(UUID.randomUUID());
         session.setCreatedBy(user.getId());
         session.setModifiedBy(user.getId());
 
@@ -174,7 +172,6 @@ public class OAuth2Service {
                 .emailVerifiedYn(true)
                 .build();
 
-        user.setId(UUID.randomUUID());
         user.setOauthType(oauthType.getValue());
         user.setCreatedBy(SYSTEM_USER_ID);
         user.setModifiedBy(SYSTEM_USER_ID);
@@ -231,7 +228,6 @@ public class OAuth2Service {
                 .requestedBy(performedBy.toString())
                 .build();
 
-        auditLog.setId(UUID.randomUUID());
         auditLog.setCreatedBy(performedBy);
         auditLog.setModifiedBy(performedBy);
 

@@ -16,12 +16,8 @@ public class MockEmailNotificationProvider implements EmailNotificationProvider 
 
     @Override
     public void sendOtp(String email, String otp) throws Exception {
-        log.warn("\n" +
-                "========================================\n" +
-                "EMAIL OTP FOR TESTING\n" +
-                "========================================\n" +
-                "Email: {}\n" +
-                "OTP: {}\n" +
-                "========================================\n", email, otp);
+        log.warn("MOCK email provider active - no real email will be sent. "
+                + "Set NOTIFICATION_EMAIL_PROVIDER=smtp with MAIL_HOST/MAIL_USERNAME/MAIL_PASSWORD/MAIL_FROM "
+                + "to deliver real OTP emails. (recipient masked, OTP not logged)");
     }
 }

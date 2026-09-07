@@ -2,6 +2,7 @@ package com.smartroad.services.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -12,6 +13,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import com.smartroad.services.common.enums.SessionStatus;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -23,6 +27,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "sr_sessions")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,9 +45,11 @@ public class SessionEntity implements Serializable {
     @Column(name = "modified_by")
     private UUID modifiedBy;
 
+    @CreatedDate
     @Column(name = "date_created")
     private java.util.Date dateCreated;
 
+    @LastModifiedDate
     @Column(name = "date_modified")
     private java.util.Date dateModified;
 

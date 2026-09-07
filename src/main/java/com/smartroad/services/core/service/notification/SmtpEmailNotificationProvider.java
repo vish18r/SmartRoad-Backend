@@ -26,7 +26,7 @@ public class SmtpEmailNotificationProvider implements EmailNotificationProvider 
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username:}")
+    @Value("${otp.mail.from:}")
     private String fromAddress;
 
     @Value("${otp.expiry-minutes:10}")
@@ -43,6 +43,7 @@ public class SmtpEmailNotificationProvider implements EmailNotificationProvider 
 
     /**
      * Sends the OTP to the given email address using the configured SMTP server.
+     * Never logs the OTP value or SMTP credentials.
      *
      * @param email the recipient email address
      * @param otp the OTP code to send
@@ -51,8 +52,9 @@ public class SmtpEmailNotificationProvider implements EmailNotificationProvider 
     @Override
     public void sendOtp(String email, String otp) throws Exception {
         if (fromAddress == null || fromAddress.isBlank()) {
+            log.error("SMTP send aborted: MAIL_FROM/MAIL_USERNAME is not configured");
             throw new IllegalStateException(
-                    "SMTP email credentials not configured. Set environment variables: MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD");
+                    "SMTP email credentials not configured. Set environment variables: MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM");
         }
 
         MimeMessage message = mailSender.createMimeMessage();
@@ -61,8 +63,10 @@ public class SmtpEmailNotificationProvider implements EmailNotificationProvider 
         helper.setTo(email);
         helper.setSubject(OtpEmailTemplate.subject());
         helper.setText(OtpEmailTemplate.buildHtml(otp, otpExpiryMinutes), true);
+        log.info("OTP email template rendered, subject and body ready");
 
+        log.info("Dispatching OTP email via SMTP host");
         mailSender.send(message);
-        log.info("OTP email dispatched via SMTP to recipient");
+        log.info("OTP email accepted by SMTP server for delivery");
     }
 }

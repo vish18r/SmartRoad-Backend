@@ -146,7 +146,6 @@ public class AuthService {
                 .expiresAt(OffsetDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))
                 .build();
 
-        session.setId(UUID.randomUUID());
         session.setCreatedBy(user.getId());
         session.setModifiedBy(user.getId());
 

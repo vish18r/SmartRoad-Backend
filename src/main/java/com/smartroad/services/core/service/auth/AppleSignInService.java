@@ -63,7 +63,6 @@ public class AppleSignInService {
                 .expiresAt(expiresAt)
                 .build();
 
-        oauthState.setId(UUID.randomUUID());
         oauthState.setCreatedBy(SYSTEM_USER_ID);
         oauthState.setModifiedBy(SYSTEM_USER_ID);
 
@@ -133,7 +132,6 @@ public class AppleSignInService {
                 .expiresAt(OffsetDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))
                 .build();
 
-        session.setId(UUID.randomUUID());
         session.setCreatedBy(user.getId());
         session.setModifiedBy(user.getId());
 
@@ -168,7 +166,6 @@ public class AppleSignInService {
                 .emailVerifiedYn(true)
                 .build();
 
-        user.setId(UUID.randomUUID());
         user.setOauthType(OAuthType.APPLE.getValue());
         user.setCreatedBy(SYSTEM_USER_ID);
         user.setModifiedBy(SYSTEM_USER_ID);
@@ -224,7 +221,6 @@ public class AppleSignInService {
                 .requestedBy(performedBy.toString())
                 .build();
 
-        auditLog.setId(UUID.randomUUID());
         auditLog.setCreatedBy(performedBy);
         auditLog.setModifiedBy(performedBy);
 
