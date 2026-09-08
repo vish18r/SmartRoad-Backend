@@ -81,7 +81,7 @@ public class AppleSignInService {
      * @return AuthResponseDTO containing access token, refresh token, and user info
      * @throws SmartRoadException if state is invalid, expired, or user creation fails
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public AuthResponseDTO handleAppleCallback(String state, String code, String idToken) throws SmartRoadException {
         OAuthStateEntity oauthState = oauthStateRepository.findByState(state)
                 .orElseThrow(() -> new SmartRoadException(

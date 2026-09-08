@@ -86,7 +86,7 @@ public class OAuth2Service {
      * @return AuthResponseDTO containing access token, refresh token, and user info
      * @throws SmartRoadException if state is invalid, expired, or user creation fails
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public AuthResponseDTO handleOAuth2Callback(String state, String code, OAuthType oauthType) throws SmartRoadException {
         OAuthStateEntity oauthState = oauthStateRepository.findByState(state)
                 .orElseThrow(() -> new SmartRoadException(

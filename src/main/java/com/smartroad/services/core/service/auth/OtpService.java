@@ -53,7 +53,7 @@ public class OtpService {
      * @return the generated 6-digit OTP string
      * @throws SmartRoadException if OTP delivery fails
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public String generateOtp(String email, OtpFlow flow) throws SmartRoadException {
         String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(1000000));
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(otpExpiryMinutes);
@@ -86,7 +86,7 @@ public class OtpService {
      * @return the generated 6-digit OTP string
      * @throws SmartRoadException if OTP delivery fails
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public String generateOtpForPhone(String phoneNumber, OtpFlow flow) throws SmartRoadException {
         String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(1000000));
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(otpExpiryMinutes);
@@ -119,7 +119,7 @@ public class OtpService {
      * @param flow the OTP flow type
      * @throws SmartRoadException if OTP invalid, expired, or max retry attempts exceeded
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void verifyOtp(String email, String otp, OtpFlow flow) throws SmartRoadException {
         OffsetDateTime now = OffsetDateTime.now();
         OtpEntity otpEntity = otpRepository.findByEmailIdAndEmailOtpAndFlowAndActiveTrue(email, otp, flow)
@@ -151,7 +151,7 @@ public class OtpService {
      * @param flow the OTP flow type
      * @throws SmartRoadException if OTP invalid, expired, or max retry attempts exceeded
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void verifyPhoneOtp(String phoneNumber, String otp, OtpFlow flow) throws SmartRoadException {
         OffsetDateTime now = OffsetDateTime.now();
         OtpEntity otpEntity = otpRepository.findByPhoneNumberAndPhoneOtpAndFlowAndActiveTrue(phoneNumber, otp, flow)
@@ -180,7 +180,7 @@ public class OtpService {
      * @param email the email address to invalidate OTPs for
      * @param flow the OTP flow type
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void invalidatePreviousOtps(String email, OtpFlow flow) {
         List<OtpEntity> activeOtps = otpRepository.findByEmailIdAndFlowOrderByDateCreatedDesc(email, flow);
         activeOtps.forEach(otp -> {
@@ -196,7 +196,7 @@ public class OtpService {
      * @param phoneNumber the phone number to invalidate OTPs for
      * @param flow the OTP flow type
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void invalidatePreviousPhoneOtps(String phoneNumber, OtpFlow flow) {
         List<OtpEntity> activeOtps = otpRepository.findByPhoneNumberAndFlowOrderByDateCreatedDesc(phoneNumber, flow);
         activeOtps.forEach(otp -> {

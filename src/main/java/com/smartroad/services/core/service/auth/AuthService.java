@@ -65,7 +65,7 @@ public class AuthService {
      * @param request the signup request containing user details and password
      * @throws SmartRoadException if password mismatch, email/phone already exists, or database operation fails
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void signup(SignupRequestDTO request) throws SmartRoadException {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "passwords.do.not.match");
@@ -117,7 +117,7 @@ public class AuthService {
      * @return AuthResponseDTO containing access token, refresh token, and user details
      * @throws SmartRoadException if authentication fails, user not found, or account not active
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public AuthResponseDTO login(LoginRequestDTO request) throws SmartRoadException {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword())
@@ -175,7 +175,7 @@ public class AuthService {
      * @return TokenResponseDTO containing new access token and expiration time
      * @throws SmartRoadException if refresh token is invalid, expired, or session not active
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TokenResponseDTO refreshToken(RefreshTokenRequestDTO request) throws SmartRoadException {
         SessionEntity session = sessionRepository.findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_UNAUTHORIZED, "invalid.refresh.token"));
@@ -218,7 +218,7 @@ public class AuthService {
      * @param refreshToken the refresh token to revoke
      * @throws SmartRoadException if refresh token is invalid or does not belong to user
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void logout(UUID userId, String refreshToken) throws SmartRoadException {
         SessionEntity session = sessionRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_UNAUTHORIZED, "invalid.session"));
@@ -244,7 +244,7 @@ public class AuthService {
      * @param userId the UUID of the user to logout from all devices
      * @throws SmartRoadException if database operation fails
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void logoutAll(UUID userId) throws SmartRoadException {
         sessionRepository.findByUserId(userId).forEach(session -> {
             session.setStatus(SessionStatus.REVOKED);
@@ -280,7 +280,7 @@ public class AuthService {
      * @param request the forgot password request containing email
      * @throws SmartRoadException if OTP generation fails
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void forgotPassword(ForgotPasswordRequestDTO request) throws SmartRoadException {
         UserEntity user = userRepository.findByEmailId(request.getEmail())
                 .orElse(null);
@@ -301,7 +301,7 @@ public class AuthService {
      * @param request the reset password request containing email, OTP, and new password
      * @throws SmartRoadException if password mismatch, OTP invalid, or user not found
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void resetPassword(ResetPasswordRequestDTO request) throws SmartRoadException {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "passwords.do.not.match");
@@ -332,7 +332,7 @@ public class AuthService {
      * @param request the change password request containing current and new passwords
      * @throws SmartRoadException if current password incorrect, password mismatch, or user not found
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void changePassword(UUID userId, ChangePasswordRequestDTO request) throws SmartRoadException {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "passwords.do.not.match");
@@ -367,7 +367,7 @@ public class AuthService {
      * @param request the verify OTP request containing email/phone, OTP, and flow type
      * @throws SmartRoadException if OTP invalid or user not found
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void verifyOtp(VerifyOtpRequestDTO request) throws SmartRoadException {
         UserEntity user = null;
 
@@ -411,7 +411,7 @@ public class AuthService {
      * @param request the resend OTP request containing email/phone and flow type
      * @throws SmartRoadException if resend cooldown not elapsed
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void resendOtp(ResendOtpRequestDTO request) throws SmartRoadException {
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             if (!otpService.canResendOtp(request.getEmail(), request.getFlow())) {
