@@ -1,6 +1,6 @@
 package com.smartroad.services.domain.repository;
 
-import com.smartroad.services.domain.entity.BusinessProfileEntity;
+import com.smartroad.services.domain.entity.business.BusinessProfileEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;

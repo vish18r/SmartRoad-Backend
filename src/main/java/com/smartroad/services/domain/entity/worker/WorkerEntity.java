@@ -1,6 +1,7 @@
-package com.smartroad.services.domain.entity;
+package com.smartroad.services.domain.entity.worker;
 
 import com.smartroad.services.common.enums.workers.WorkerStatusEnum;
+import com.smartroad.services.domain.entity.SmartRoadBaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

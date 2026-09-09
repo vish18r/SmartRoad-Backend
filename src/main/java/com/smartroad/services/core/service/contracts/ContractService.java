@@ -6,7 +6,7 @@ import com.smartroad.services.common.exception.ErrorCodeMapping;
 import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.core.dto.contracts.ContractRequestDTO;
 import com.smartroad.services.core.dto.contracts.ContractResponseDTO;
-import com.smartroad.services.domain.entity.ContractEntity;
+import com.smartroad.services.domain.entity.project.ContractEntity;
 import com.smartroad.services.domain.repository.ContractRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

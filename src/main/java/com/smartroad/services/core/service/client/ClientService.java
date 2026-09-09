@@ -2,7 +2,7 @@ package com.smartroad.services.core.service.client;
 import com.smartroad.services.common.exception.*;
 import com.smartroad.services.core.dto.client.*;
 import com.smartroad.services.core.service.organization.OrganizationService;
-import com.smartroad.services.domain.entity.ClientEntity;
+import com.smartroad.services.domain.entity.client.ClientEntity;
 import com.smartroad.services.domain.repository.ClientRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

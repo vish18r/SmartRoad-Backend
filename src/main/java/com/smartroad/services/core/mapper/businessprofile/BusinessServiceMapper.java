@@ -2,7 +2,7 @@ package com.smartroad.services.core.mapper.businessprofile;
 
 import com.smartroad.services.core.dto.businessprofile.BusinessServiceRequestDTO;
 import com.smartroad.services.core.dto.businessprofile.BusinessServiceResponseDTO;
-import com.smartroad.services.domain.entity.BusinessServiceEntity;
+import com.smartroad.services.domain.entity.business.BusinessServiceEntity;
 import org.springframework.stereotype.Component;
 
 /**

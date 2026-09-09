@@ -1,6 +1,7 @@
-package com.smartroad.services.domain.entity;
+package com.smartroad.services.domain.entity.procurement;
 
 import com.smartroad.services.common.enums.grn.GrnStatusEnum;
+import com.smartroad.services.domain.entity.SmartRoadBaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

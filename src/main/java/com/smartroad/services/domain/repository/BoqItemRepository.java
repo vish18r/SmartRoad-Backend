@@ -1,6 +1,6 @@
 package com.smartroad.services.domain.repository;
 
-import com.smartroad.services.domain.entity.BoqItemEntity;
+import com.smartroad.services.domain.entity.project.BoqItemEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

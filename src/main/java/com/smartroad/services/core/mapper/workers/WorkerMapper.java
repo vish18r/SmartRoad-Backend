@@ -2,7 +2,7 @@ package com.smartroad.services.core.mapper.workers;
 
 import com.smartroad.services.core.dto.workers.WorkerRequestDTO;
 import com.smartroad.services.core.dto.workers.WorkerResponseDTO;
-import com.smartroad.services.domain.entity.WorkerEntity;
+import com.smartroad.services.domain.entity.worker.WorkerEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;

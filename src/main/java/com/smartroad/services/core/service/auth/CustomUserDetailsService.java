@@ -1,7 +1,7 @@
 package com.smartroad.services.core.service.auth;
 
 import com.smartroad.services.common.enums.auth.UserStatusEnum;
-import com.smartroad.services.domain.entity.UserEntity;
+import com.smartroad.services.domain.entity.user.UserEntity;
 import com.smartroad.services.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

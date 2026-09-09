@@ -1,6 +1,6 @@
 package com.smartroad.services.domain.repository;
 
-import com.smartroad.services.domain.entity.RoadEntity;
+import com.smartroad.services.domain.entity.road.RoadEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

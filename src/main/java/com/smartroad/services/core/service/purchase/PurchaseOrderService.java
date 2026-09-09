@@ -6,7 +6,7 @@ import com.smartroad.services.common.exception.ErrorCodeMapping;
 import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.core.dto.purchase.PurchaseOrderRequestDTO;
 import com.smartroad.services.core.dto.purchase.PurchaseOrderResponseDTO;
-import com.smartroad.services.domain.entity.PurchaseOrderEntity;
+import com.smartroad.services.domain.entity.procurement.PurchaseOrderEntity;
 import com.smartroad.services.domain.repository.PurchaseOrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

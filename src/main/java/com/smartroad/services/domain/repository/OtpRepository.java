@@ -1,6 +1,6 @@
 package com.smartroad.services.domain.repository;
 
-import com.smartroad.services.domain.entity.OtpEntity;
+import com.smartroad.services.domain.entity.auth.OtpEntity;
 import com.smartroad.services.common.enums.OtpFlow;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

@@ -13,9 +13,9 @@ import com.smartroad.services.core.dto.businessprofile.CompleteBusinessProfileRe
 import com.smartroad.services.core.mapper.businessprofile.BusinessContactMapper;
 import com.smartroad.services.core.mapper.businessprofile.BusinessProfileMapper;
 import com.smartroad.services.core.mapper.businessprofile.BusinessServiceMapper;
-import com.smartroad.services.domain.entity.BusinessContactEntity;
-import com.smartroad.services.domain.entity.BusinessProfileEntity;
-import com.smartroad.services.domain.entity.BusinessServiceEntity;
+import com.smartroad.services.domain.entity.business.BusinessContactEntity;
+import com.smartroad.services.domain.entity.business.BusinessProfileEntity;
+import com.smartroad.services.domain.entity.business.BusinessServiceEntity;
 import com.smartroad.services.domain.repository.BusinessContactRepository;
 import com.smartroad.services.domain.repository.BusinessProfileRepository;
 import com.smartroad.services.domain.repository.BusinessServiceRepository;

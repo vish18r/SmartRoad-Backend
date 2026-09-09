@@ -1,6 +1,6 @@
 package com.smartroad.services.domain.repository;
 
-import com.smartroad.services.domain.entity.OrganizationMemberEntity;
+import com.smartroad.services.domain.entity.organization.OrganizationMemberEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.*;
 

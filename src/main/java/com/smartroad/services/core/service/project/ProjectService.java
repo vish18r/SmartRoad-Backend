@@ -7,7 +7,7 @@ import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.core.dto.project.ProjectRequestDTO;
 import com.smartroad.services.core.dto.project.ProjectResponseDTO;
 import com.smartroad.services.core.service.organization.OrganizationService;
-import com.smartroad.services.domain.entity.ProjectEntity;
+import com.smartroad.services.domain.entity.project.ProjectEntity;
 import com.smartroad.services.domain.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

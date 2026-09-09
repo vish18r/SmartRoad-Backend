@@ -1,5 +1,6 @@
-package com.smartroad.services.domain.entity;
+package com.smartroad.services.domain.entity.project;
 
+import com.smartroad.services.domain.entity.SmartRoadBaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;

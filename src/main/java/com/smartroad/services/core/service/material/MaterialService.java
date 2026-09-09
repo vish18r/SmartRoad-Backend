@@ -5,7 +5,7 @@ import com.smartroad.services.common.exception.ErrorCodeMapping;
 import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.core.dto.material.MaterialRequestDTO;
 import com.smartroad.services.core.dto.material.MaterialResponseDTO;
-import com.smartroad.services.domain.entity.MaterialEntity;
+import com.smartroad.services.domain.entity.material.MaterialEntity;
 import com.smartroad.services.domain.repository.MaterialRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

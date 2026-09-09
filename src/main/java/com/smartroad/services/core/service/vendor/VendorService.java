@@ -5,7 +5,7 @@ import com.smartroad.services.common.exception.ErrorCodeMapping;
 import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.core.dto.vendor.VendorRequestDTO;
 import com.smartroad.services.core.dto.vendor.VendorResponseDTO;
-import com.smartroad.services.domain.entity.VendorEntity;
+import com.smartroad.services.domain.entity.vendor.VendorEntity;
 import com.smartroad.services.domain.repository.VendorRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

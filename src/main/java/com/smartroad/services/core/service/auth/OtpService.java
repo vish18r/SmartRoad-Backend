@@ -5,7 +5,7 @@ import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.common.exception.ApplicationLayer;
 import com.smartroad.services.common.exception.ErrorCodeMapping;
 import com.smartroad.services.core.service.notification.NotificationService;
-import com.smartroad.services.domain.entity.OtpEntity;
+import com.smartroad.services.domain.entity.auth.OtpEntity;
 import com.smartroad.services.domain.repository.OtpRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -8,7 +8,7 @@ import com.smartroad.services.core.dto.workers.WorkerRequestDTO;
 import com.smartroad.services.core.dto.workers.WorkerResponseDTO;
 import com.smartroad.services.core.mapper.workers.WorkerMapper;
 import com.smartroad.services.core.service.organization.OrganizationService;
-import com.smartroad.services.domain.entity.WorkerEntity;
+import com.smartroad.services.domain.entity.worker.WorkerEntity;
 import com.smartroad.services.domain.repository.WorkerRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

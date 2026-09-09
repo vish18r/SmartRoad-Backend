@@ -1,8 +1,9 @@
-package com.smartroad.services.domain.entity;
+package com.smartroad.services.domain.entity.user;
 
-import com.smartroad.services.common.enums.auth.UserStatusEnum;
 import com.smartroad.services.common.enums.auth.UserRoleEnum;
+import com.smartroad.services.common.enums.auth.UserStatusEnum;
 import com.smartroad.services.common.enums.auth.UserTypeEnum;
+import com.smartroad.services.domain.entity.SmartRoadBaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

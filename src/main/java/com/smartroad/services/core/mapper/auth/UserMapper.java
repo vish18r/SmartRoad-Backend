@@ -1,7 +1,7 @@
 package com.smartroad.services.core.mapper.auth;
 
 import com.smartroad.services.core.dto.auth.UserResponseDTO;
-import com.smartroad.services.domain.entity.UserEntity;
+import com.smartroad.services.domain.entity.user.UserEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

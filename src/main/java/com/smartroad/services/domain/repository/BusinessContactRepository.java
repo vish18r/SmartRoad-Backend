@@ -1,7 +1,7 @@
 package com.smartroad.services.domain.repository;
 
 import com.smartroad.services.common.enums.businessprofile.ContactRoleEnum;
-import com.smartroad.services.domain.entity.BusinessContactEntity;
+import com.smartroad.services.domain.entity.business.BusinessContactEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
