@@ -69,7 +69,7 @@ public class OtpService {
         otpEntity.setModifiedBy(SYSTEM_USER_ID);
 
         otpRepository.saveAndFlush(otpEntity);
-        log.info("OTP generated and saved for email: {} with flow: {}", email, flow);
+        log.info("OTP generated and saved for email recipient with flow: {}", flow);
 
         notificationService.sendOtpViaEmail(email, otp);
 
@@ -102,7 +102,7 @@ public class OtpService {
         otpEntity.setModifiedBy(SYSTEM_USER_ID);
 
         otpRepository.saveAndFlush(otpEntity);
-        log.info("OTP generated and saved for phone: {} with flow: {}", phoneNumber, flow);
+        log.info("OTP generated and saved for phone recipient with flow: {}", flow);
 
         notificationService.sendOtpViaSms(phoneNumber, otp);
 
@@ -138,7 +138,7 @@ public class OtpService {
         otpEntity.setActive(false);
         otpRepository.save(otpEntity);
 
-        log.info("OTP verified successfully for email: {} with flow: {}", email, flow);
+        log.info("OTP verified successfully for email recipient with flow: {}", flow);
     }
 
     /**
@@ -170,7 +170,7 @@ public class OtpService {
         otpEntity.setActive(false);
         otpRepository.save(otpEntity);
 
-        log.info("OTP verified successfully for phone: {} with flow: {}", phoneNumber, flow);
+        log.info("OTP verified successfully for phone recipient with flow: {}", flow);
     }
 
     /**

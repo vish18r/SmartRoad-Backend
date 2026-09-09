@@ -97,15 +97,13 @@ public class AuthService {
 
         if (user.getPhoneNumber() != null) {
             otpService.generateOtpForPhone(user.getPhoneNumber(), OtpFlow.SIGNUP_VERIFICATION);
-            log.info("OTP sent to phone: {}", user.getPhoneNumber());
         }
 
         if (user.getEmailId() != null) {
             otpService.generateOtp(user.getEmailId(), OtpFlow.SIGNUP_VERIFICATION);
-            log.info("OTP sent to email: {}", user.getEmailId());
         }
 
-        log.info("User signed up successfully: {}", user.getEmailId());
+        log.info("User signed up successfully with id: {}", user.getId());
     }
 
     /**
@@ -399,7 +397,7 @@ public class AuthService {
 
             createAuditLog(user.getId(), user.getId(), "OTP_VERIFIED", "SUCCESS");
 
-            log.info("OTP verified for user: {}", user.getEmailId() != null ? user.getEmailId() : user.getPhoneNumber());
+            log.info("OTP verified for user id: {}", user.getId());
         }
     }
 
@@ -418,15 +416,15 @@ public class AuthService {
                 throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "please.wait.before.requesting.another.otp");
             }
             otpService.invalidatePreviousOtps(request.getEmail(), request.getFlow());
-            String otp = otpService.generateOtp(request.getEmail(), request.getFlow());
-            log.info("OTP resent to email: {} with flow: {}", request.getEmail(), request.getFlow());
+            otpService.generateOtp(request.getEmail(), request.getFlow());
+            log.info("OTP resent to email recipient with flow: {}", request.getFlow());
         } else if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
             if (!otpService.canResendOtp(request.getPhoneNumber(), request.getFlow())) {
                 throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_VALIDATION_FAILED, "please.wait.before.requesting.another.otp");
             }
             otpService.invalidatePreviousPhoneOtps(request.getPhoneNumber(), request.getFlow());
-            String otp = otpService.generateOtpForPhone(request.getPhoneNumber(), request.getFlow());
-            log.info("OTP resent to phone: {} with flow: {}", request.getPhoneNumber(), request.getFlow());
+            otpService.generateOtpForPhone(request.getPhoneNumber(), request.getFlow());
+            log.info("OTP resent to phone recipient with flow: {}", request.getFlow());
         }
     }
 

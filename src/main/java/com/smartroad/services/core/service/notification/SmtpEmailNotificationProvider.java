@@ -29,6 +29,12 @@ public class SmtpEmailNotificationProvider implements EmailNotificationProvider 
     @Value("${otp.mail.from:}")
     private String fromAddress;
 
+    @Value("${spring.mail.username:}")
+    private String smtpUsername;
+
+    @Value("${spring.mail.password:}")
+    private String smtpPassword;
+
     @Value("${otp.expiry-minutes:10}")
     private int otpExpiryMinutes;
 
@@ -51,11 +57,7 @@ public class SmtpEmailNotificationProvider implements EmailNotificationProvider 
      */
     @Override
     public void sendOtp(String email, String otp) throws Exception {
-        if (fromAddress == null || fromAddress.isBlank()) {
-            log.error("SMTP send aborted: MAIL_FROM/MAIL_USERNAME is not configured");
-            throw new IllegalStateException(
-                    "SMTP email credentials not configured. Set environment variables: MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM");
-        }
+        verifyCredentialsConfigured();
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
@@ -68,5 +70,33 @@ public class SmtpEmailNotificationProvider implements EmailNotificationProvider 
         log.info("Dispatching OTP email via SMTP host");
         mailSender.send(message);
         log.info("OTP email accepted by SMTP server for delivery");
+    }
+
+    /**
+     * Verifies that the sender address and SMTP credentials are all present before
+     * attempting delivery, so a missing configuration is reported as its actual cause
+     * instead of surfacing later as an opaque SMTP authentication failure.
+     * Credential values themselves are never logged.
+     *
+     * @throws IllegalStateException if the sender address, username, or password is missing
+     */
+    private void verifyCredentialsConfigured() {
+        if (fromAddress == null || fromAddress.isBlank()) {
+            log.error("SMTP send aborted - ROOT CAUSE: MAIL_FROM/MAIL_USERNAME is not configured");
+            throw new IllegalStateException(
+                    "SMTP sender address not configured. Set environment variable MAIL_FROM (or MAIL_USERNAME)");
+        }
+
+        if (smtpUsername == null || smtpUsername.isBlank()) {
+            log.error("SMTP send aborted - ROOT CAUSE: SMTP credentials are missing (MAIL_USERNAME is not set)");
+            throw new IllegalStateException(
+                    "SMTP credentials are missing. Set environment variable MAIL_USERNAME");
+        }
+
+        if (smtpPassword == null || smtpPassword.isBlank()) {
+            log.error("SMTP send aborted - ROOT CAUSE: SMTP credentials are missing (MAIL_PASSWORD is not set)");
+            throw new IllegalStateException(
+                    "SMTP credentials are missing. Set environment variable MAIL_PASSWORD to a Gmail App Password");
+        }
     }
 }
