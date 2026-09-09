@@ -1,11 +1,15 @@
 package com.smartroad.services.domain.repository;
 
+import com.smartroad.services.common.enums.purchase.PurchaseOrderStatusEnum;
 import com.smartroad.services.domain.entity.procurement.PurchaseOrderEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,4 +50,34 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrderEnti
      */
     @Query("SELECT p FROM PurchaseOrderEntity p WHERE p.vendorId = :vendorId")
     List<PurchaseOrderEntity> findByVendorId(@Param("vendorId") UUID vendorId);
+
+    /**
+     * Sums purchase order value for an organization across the given statuses,
+     * scoped through each order's project.
+     *
+     * @param organizationId the organization UUID
+     * @param statuses the purchase order statuses to include
+     * @return summed order value, or null when no order matches
+     */
+    @Query("SELECT SUM(po.totalAmount) FROM PurchaseOrderEntity po, ProjectEntity p "
+            + "WHERE po.projectId = p.id AND p.organizationId = :organizationId AND p.archived = FALSE "
+            + "AND po.status IN :statuses")
+    BigDecimal sumAmountByOrganizationAndStatuses(@Param("organizationId") UUID organizationId,
+                                                  @Param("statuses") Collection<PurchaseOrderStatusEnum> statuses);
+
+    /**
+     * Counts an organization's purchase orders in the given statuses whose expected
+     * delivery date has already passed.
+     *
+     * @param organizationId the organization UUID
+     * @param statuses the purchase order statuses to include
+     * @param asOf the reference date to compare expected delivery dates against
+     * @return count of overdue deliveries
+     */
+    @Query("SELECT COUNT(po) FROM PurchaseOrderEntity po, ProjectEntity p "
+            + "WHERE po.projectId = p.id AND p.organizationId = :organizationId AND p.archived = FALSE "
+            + "AND po.status IN :statuses AND po.expectedDeliveryDate IS NOT NULL AND po.expectedDeliveryDate < :asOf")
+    long countOverdueDeliveriesByOrganization(@Param("organizationId") UUID organizationId,
+                                              @Param("statuses") Collection<PurchaseOrderStatusEnum> statuses,
+                                              @Param("asOf") Date asOf);
 }

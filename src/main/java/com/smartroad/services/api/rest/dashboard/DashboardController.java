@@ -3,7 +3,9 @@ package com.smartroad.services.api.rest.dashboard;
 import com.smartroad.services.api.utils.RequestUtil;
 import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.core.dto.dashboard.DashboardStatsDTO;
+import com.smartroad.services.core.dto.dashboard.OwnerDashboardResponseDTO;
 import com.smartroad.services.core.service.dashboard.DashboardService;
+import com.smartroad.services.core.service.dashboard.OwnerDashboardService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -33,14 +35,18 @@ public class DashboardController {
     private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
 
     private final DashboardService dashboardService;
+    private final OwnerDashboardService ownerDashboardService;
 
     /**
-     * Constructs the controller with required service dependency.
+     * Constructs the controller with required service dependencies.
      *
      * @param dashboardService the dashboard service
+     * @param ownerDashboardService the owner dashboard service
      */
-    public DashboardController(DashboardService dashboardService) {
+    public DashboardController(DashboardService dashboardService,
+                               OwnerDashboardService ownerDashboardService) {
         this.dashboardService = dashboardService;
+        this.ownerDashboardService = ownerDashboardService;
     }
 
     /**
@@ -59,6 +65,26 @@ public class DashboardController {
 
         UUID userId = RequestUtil.extractUserId();
         DashboardStatsDTO response = dashboardService.getDashboardStats(organizationId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Retrieves the executive owner dashboard for an organization, covering
+     * portfolio, contract, financial, and deadline metrics.
+     *
+     * @param organizationId the UUID of the organization
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing {@link OwnerDashboardResponseDTO}
+     * @throws SmartRoadException if retrieval fails
+     */
+    @GetMapping(path = "/owner", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> getOwnerDashboard(@RequestParam UUID organizationId,
+                                                    @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside getOwnerDashboard method--");
+
+        OwnerDashboardResponseDTO response = ownerDashboardService.getOwnerDashboard(organizationId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
