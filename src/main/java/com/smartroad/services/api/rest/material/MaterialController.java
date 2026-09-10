@@ -5,8 +5,12 @@ import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.common.util.NextentiConstants;
 import com.smartroad.services.core.dto.material.MaterialRequestDTO;
 import com.smartroad.services.core.dto.material.MaterialResponseDTO;
+import com.smartroad.services.core.dto.material.StockLedgerPageResponseDTO;
+import com.smartroad.services.core.dto.stock.StockTransferRequestDTO;
+import com.smartroad.services.core.dto.stock.StockTransferResponseDTO;
 import com.smartroad.services.core.service.material.MaterialService;
 import com.smartroad.services.core.service.organization.OrganizationService;
+import com.smartroad.services.core.service.stock.StockService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,16 +48,21 @@ public class MaterialController {
 
     private final MaterialService materialService;
     private final OrganizationService organizationService;
+    private final StockService stockService;
 
     /**
      * Constructs the controller with required service dependency.
      *
      * @param materialService the material service
      * @param organizationService the organization service, used to resolve the caller's organization
+     * @param stockService the stock service, owning transfers and the stock ledger
      */
-    public MaterialController(MaterialService materialService, OrganizationService organizationService) {
+    public MaterialController(MaterialService materialService,
+                              OrganizationService organizationService,
+                              StockService stockService) {
         this.materialService = materialService;
         this.organizationService = organizationService;
+        this.stockService = stockService;
     }
 
     /**
@@ -184,6 +193,102 @@ public class MaterialController {
         materialService.delete(id);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+
+    /**
+     * Reports the organization's materials that have fallen to or below their reorder threshold.
+     * The optional project filter is accepted either as the projectId query parameter or as the
+     * x-project-id header the web client sends; when present, stock is measured on that project alone.
+     * The organization is optional and is resolved from the caller when omitted.
+     *
+     * @param organizationId the optional UUID of the organization
+     * @param projectId the optional project UUID supplied as a query parameter
+     * @param projectIdHeader the optional project UUID supplied as the x-project-id header
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing a list of low-stock {@link MaterialResponseDTO}
+     * @throws SmartRoadException if the caller belongs to no organization or retrieval fails
+     */
+    @GetMapping(path = "/low-stock", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> listLowStockMaterials(@RequestParam(required = false) UUID organizationId,
+                                                        @RequestParam(required = false) UUID projectId,
+                                                        @RequestHeader(name = NextentiConstants.HEADER_PROJECT_ID, required = false) UUID projectIdHeader,
+                                                        @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside listLowStockMaterials method--");
+
+        UUID projectFilter = projectId != null ? projectId : projectIdHeader;
+        List<MaterialResponseDTO> response = materialService.listLowStock(resolveOrganization(organizationId), projectFilter);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Moves stock of a material from one project to another and records both legs in the stock ledger.
+     *
+     * @param request the stock transfer request
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the recorded {@link StockTransferResponseDTO}
+     * @throws SmartRoadException if the material or source stock is not found, or the source balance
+     *                            is insufficient
+     */
+    @PostMapping(path = "/transfer", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> transferStock(@RequestBody @Valid StockTransferRequestDTO request,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside transferStock method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        StockTransferResponseDTO response = stockService.transfer(userId, request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Retrieves a page of a material's stock ledger, most recent movement first.
+     * Pagination is read from the x-page and x-limit headers the web client sends, falling back to
+     * the page and limit request parameters.
+     *
+     * @param id the material UUID
+     * @param page the optional one-based page number supplied as a query parameter
+     * @param limit the optional page size supplied as a query parameter
+     * @param pageHeader the optional page number supplied as the x-page header
+     * @param limitHeader the optional page size supplied as the x-limit header
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the {@link StockLedgerPageResponseDTO}
+     * @throws SmartRoadException if the material is not found
+     */
+    @GetMapping(path = "/{id}/stock-ledger", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> getStockLedger(@PathVariable UUID id,
+                                                 @RequestParam(required = false) Integer page,
+                                                 @RequestParam(required = false) Integer limit,
+                                                 @RequestHeader(name = NextentiConstants.HEADER_PAGE, required = false) Integer pageHeader,
+                                                 @RequestHeader(name = NextentiConstants.HEADER_LIMIT, required = false) Integer limitHeader,
+                                                 @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside getStockLedger method--");
+
+        int resolvedPage = firstNonNull(page, pageHeader, NextentiConstants.DEFAULT_PAGE);
+        int resolvedLimit = firstNonNull(limit, limitHeader, NextentiConstants.DEFAULT_LIMIT);
+        StockLedgerPageResponseDTO response = stockService.getLedger(id, resolvedPage, resolvedLimit);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Returns the first of the supplied pagination values that is present.
+     *
+     * @param parameter the value from the request parameter, possibly null
+     * @param header the value from the request header, possibly null
+     * @param fallback the default to use when neither is present
+     * @return the resolved value
+     */
+    private int firstNonNull(Integer parameter, Integer header, int fallback) {
+        if (parameter != null) {
+            return parameter;
+        }
+        return header != null ? header : fallback;
     }
 
     /**

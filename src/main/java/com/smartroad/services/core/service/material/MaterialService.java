@@ -130,6 +130,26 @@ public class MaterialService {
     }
 
     /**
+     * Reports an organization's materials whose available stock has fallen to or below their
+     * configured reorder threshold. Materials with no threshold set are never reported.
+     * When a project is supplied, stock is measured on that project alone rather than across all projects.
+     *
+     * @param organizationId the organization UUID
+     * @param projectId the optional project UUID to measure stock against
+     * @return list of material response DTOs at or below their reorder threshold
+     */
+    @Transactional(readOnly = true)
+    public List<MaterialResponseDTO> listLowStock(UUID organizationId, UUID projectId) {
+        List<MaterialEntity> materials = projectId == null
+            ? materialRepository.findLowStock(organizationId)
+            : materialRepository.findLowStockByProject(organizationId, projectId);
+
+        return materials.stream()
+            .map(this::mapToResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
      * Updates an existing material.
      *
      * @param id the material UUID
