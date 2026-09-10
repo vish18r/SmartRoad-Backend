@@ -29,12 +29,17 @@ public class OrganizationService {
     public OrganizationResponseDTO create(UUID userId, OrganizationRequestDTO request) {
         OrganizationEntity organization = new OrganizationEntity();
         apply(organization, request);
+        // `active` has no default, so leaving it null persists NULL and every
+        // ...AndActiveTrue lookup then misses — locking the creator out of the
+        // organization they just made.
+        organization.setActive(true);
         organizations.save(organization);
 
         OrganizationMemberEntity owner = new OrganizationMemberEntity();
         owner.setOrganizationId(organization.getId());
         owner.setUserId(userId);
         owner.setRole(UserRole.ADMIN.getValue());
+        owner.setActive(true);
         members.save(owner);
         return toResponse(organization);
     }
