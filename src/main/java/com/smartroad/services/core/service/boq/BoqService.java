@@ -149,6 +149,99 @@ public class BoqService {
     }
 
     /**
+     * Updates a BOQ's name and description.
+     *
+     * @param u the user UUID
+     * @param bid the BOQ UUID
+     * @param r the BOQ request DTO
+     * @return the updated BOQ response DTO
+     * @throws SmartRoadException if BOQ not found or user not authorized
+     */
+    @Transactional
+    public BoqResponseDTO update(UUID u, UUID bid, BoqRequestDTO r) throws SmartRoadException {
+        BoqEntity b = boq(u, bid);
+        b.setName(r.name());
+        b.setDescription(r.description());
+        b.setModifiedBy(u);
+        return map(boqs.save(b));
+    }
+
+    /**
+     * Deletes a BOQ together with all of its items.
+     *
+     * @param u the user UUID
+     * @param bid the BOQ UUID
+     * @throws SmartRoadException if BOQ not found or user not authorized
+     */
+    @Transactional
+    public void delete(UUID u, UUID bid) throws SmartRoadException {
+        BoqEntity b = boq(u, bid);
+        items.deleteByBoqId(bid);
+        boqs.delete(b);
+    }
+
+    /**
+     * Updates an existing BOQ item.
+     *
+     * @param u the user UUID
+     * @param bid the BOQ UUID
+     * @param itemId the BOQ item UUID
+     * @param r the BOQ item request DTO
+     * @return the updated BOQ item response DTO
+     * @throws SmartRoadException if BOQ or item not found or user not authorized
+     */
+    @Transactional
+    public BoqItemResponseDTO updateItem(UUID u, UUID bid, UUID itemId, BoqItemRequestDTO r) throws SmartRoadException {
+        BoqItemEntity i = item(u, bid, itemId);
+        apply(i, r);
+        i.setModifiedBy(u);
+        return itemMap(items.save(i));
+    }
+
+    /**
+     * Deletes a BOQ item.
+     *
+     * @param u the user UUID
+     * @param bid the BOQ UUID
+     * @param itemId the BOQ item UUID
+     * @throws SmartRoadException if BOQ or item not found or user not authorized
+     */
+    @Transactional
+    public void deleteItem(UUID u, UUID bid, UUID itemId) throws SmartRoadException {
+        items.delete(item(u, bid, itemId));
+    }
+
+    /**
+     * Loads a BOQ after verifying the caller may access its owning project.
+     *
+     * @param u the user UUID
+     * @param bid the BOQ UUID
+     * @return the BoqEntity
+     * @throws SmartRoadException if BOQ not found or user not authorized
+     */
+    private BoqEntity boq(UUID u, UUID bid) throws SmartRoadException {
+        BoqEntity b = boqs.findById(bid)
+                .orElseThrow(() -> nf("boq.not.found"));
+        project(u, b.getProjectId());
+        return b;
+    }
+
+    /**
+     * Loads a BOQ item scoped to its BOQ, after verifying the caller may access the owning project.
+     *
+     * @param u the user UUID
+     * @param bid the BOQ UUID
+     * @param itemId the BOQ item UUID
+     * @return the BoqItemEntity
+     * @throws SmartRoadException if BOQ or item not found or user not authorized
+     */
+    private BoqItemEntity item(UUID u, UUID bid, UUID itemId) throws SmartRoadException {
+        boq(u, bid);
+        return items.findByIdAndBoqId(itemId, bid)
+                .orElseThrow(() -> nf("boq.item.not.found"));
+    }
+
+    /**
      * Applies request data to BOQ item entity.
      *
      * @param i the BOQ item entity to update

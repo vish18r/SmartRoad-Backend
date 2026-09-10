@@ -15,9 +15,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -134,5 +136,95 @@ public class BoqController {
         List<BoqItemResponseDTO> response = boqService.listItems(userId, boqId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Updates an existing BOQ.
+     *
+     * @param boqId the UUID of the BOQ
+     * @param request the BOQ update request
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the updated {@link BoqResponseDTO}
+     * @throws SmartRoadException if BOQ not found or update fails
+     */
+    @PutMapping(path = "/boq/{boqId}", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> updateBoq(@PathVariable UUID boqId,
+                                            @RequestBody @Valid BoqRequestDTO request,
+                                            @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside updateBoq method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        BoqResponseDTO response = boqService.update(userId, boqId, request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Deletes a BOQ along with all of its items.
+     *
+     * @param boqId the UUID of the BOQ
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK on successful deletion
+     * @throws SmartRoadException if BOQ not found or deletion fails
+     */
+    @DeleteMapping(path = "/boq/{boqId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> deleteBoq(@PathVariable UUID boqId,
+                                            @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside deleteBoq method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        boqService.delete(userId, boqId);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    /**
+     * Updates an existing BOQ item.
+     *
+     * @param boqId the UUID of the BOQ
+     * @param itemId the UUID of the BOQ item
+     * @param request the BOQ item update request
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the updated {@link BoqItemResponseDTO}
+     * @throws SmartRoadException if BOQ or item not found or update fails
+     */
+    @PutMapping(path = "/boq/{boqId}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> updateBoqItem(@PathVariable UUID boqId,
+                                                @PathVariable UUID itemId,
+                                                @RequestBody @Valid BoqItemRequestDTO request,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside updateBoqItem method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        BoqItemResponseDTO response = boqService.updateItem(userId, boqId, itemId, request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Deletes a BOQ item.
+     *
+     * @param boqId the UUID of the BOQ
+     * @param itemId the UUID of the BOQ item
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK on successful deletion
+     * @throws SmartRoadException if BOQ or item not found or deletion fails
+     */
+    @DeleteMapping(path = "/boq/{boqId}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> deleteBoqItem(@PathVariable UUID boqId,
+                                                @PathVariable UUID itemId,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside deleteBoqItem method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        boqService.deleteItem(userId, boqId, itemId);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

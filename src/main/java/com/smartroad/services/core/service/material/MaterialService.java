@@ -61,6 +61,7 @@ public class MaterialService {
                 .unit(request.unit())
                 .category(request.category())
                 .description(request.description())
+                .minimumStock(request.minimumStock())
                 .build();
 
             MaterialEntity saved = materialRepository.save(entity);
@@ -109,6 +110,26 @@ public class MaterialService {
     }
 
     /**
+     * Searches an organization's materials by code, name, or category.
+     * A blank or missing term returns an empty list rather than the full catalogue.
+     *
+     * @param organizationId the organization UUID
+     * @param query the free-text search term
+     * @return list of matching material response DTOs
+     */
+    @Transactional(readOnly = true)
+    public List<MaterialResponseDTO> search(UUID organizationId, String query) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        String term = "%" + query.trim().toLowerCase() + "%";
+        return materialRepository.search(organizationId, term)
+            .stream()
+            .map(this::mapToResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
      * Updates an existing material.
      *
      * @param id the material UUID
@@ -129,6 +150,7 @@ public class MaterialService {
             entity.setUnit(request.unit());
             entity.setCategory(request.category());
             entity.setDescription(request.description());
+            entity.setMinimumStock(request.minimumStock());
 
             MaterialEntity updated = materialRepository.save(entity);
             return mapToResponseDTO(updated);
@@ -187,6 +209,7 @@ public class MaterialService {
             .unit(entity.getUnit())
             .category(entity.getCategory())
             .description(entity.getDescription())
+            .minimumStock(entity.getMinimumStock())
             .createdBy(entity.getCreatedBy())
             .modifiedBy(entity.getModifiedBy())
             .createdDate(entity.getDateCreated())

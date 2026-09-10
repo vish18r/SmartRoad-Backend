@@ -1,7 +1,7 @@
 package com.smartroad.services.api.rest.contracts;
 
-import com.smartroad.services.api.utils.RequestUtil;
 import com.smartroad.services.common.exception.SmartRoadException;
+import com.smartroad.services.common.util.NextentiConstants;
 import com.smartroad.services.core.dto.contracts.ContractRequestDTO;
 import com.smartroad.services.core.dto.contracts.ContractResponseDTO;
 import com.smartroad.services.core.service.contracts.ContractService;
@@ -30,12 +30,13 @@ import java.util.UUID;
 /**
  * REST controller for contract management.
  * Handles HTTP requests for contract CRUD operations, delegating all business logic to {@link ContractService}.
+ * Mapped at the API root so contracts can also be addressed as a nested resource of a project or a client.
  *
  * @author Vishal
  * @version 1.0
  */
 @RestController
-@RequestMapping("/api/v1/contracts")
+@RequestMapping("/api/v1")
 public class ContractController {
 
     private static final Logger logger = LoggerFactory.getLogger(ContractController.class);
@@ -59,34 +60,101 @@ public class ContractController {
      * @return {@link ResponseEntity} containing the created {@link ContractResponseDTO}
      * @throws SmartRoadException if creation fails
      */
-    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(path = "/contracts", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> createContract(@RequestBody @Valid ContractRequestDTO request,
                                                  @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside createContract method--");
 
-        UUID userId = RequestUtil.extractUserId();
         ContractResponseDTO response = contractService.create(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
-     * Retrieves all contracts for a project.
+     * Retrieves contracts, optionally narrowed to a single project.
+     * The project filter is accepted either as the projectId query parameter or as the
+     * x-project-id header the web client sends; when neither is present every contract is returned.
+     *
+     * @param projectId the optional project UUID supplied as a query parameter
+     * @param projectIdHeader the optional project UUID supplied as the x-project-id header
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing a list of {@link ContractResponseDTO}
+     * @throws SmartRoadException if retrieval fails
+     */
+    @GetMapping(path = "/contracts", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> listContracts(@RequestParam(required = false) UUID projectId,
+                                                @RequestHeader(name = NextentiConstants.HEADER_PROJECT_ID, required = false) UUID projectIdHeader,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside listContracts method--");
+
+        UUID filter = projectId != null ? projectId : projectIdHeader;
+        List<ContractResponseDTO> response = filter == null
+                ? contractService.listAll()
+                : contractService.listByProject(filter);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Searches contracts by contract number, work order number, or agreement number.
+     * The term is read from the x-search header the web client sends, falling back to the
+     * query request parameter.
+     *
+     * @param query the optional search term supplied as a query parameter
+     * @param searchHeader the optional search term supplied as the x-search header
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing a list of matching {@link ContractResponseDTO}
+     * @throws SmartRoadException if the search fails
+     */
+    @GetMapping(path = "/contracts/search", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> searchContracts(@RequestParam(required = false) String query,
+                                                  @RequestHeader(name = NextentiConstants.HEADER_SEARCH, required = false) String searchHeader,
+                                                  @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside searchContracts method--");
+
+        String term = query != null ? query : searchHeader;
+        List<ContractResponseDTO> response = contractService.search(term);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Retrieves all contracts belonging to a project.
      *
      * @param projectId the project UUID
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing a list of {@link ContractResponseDTO}
      * @throws SmartRoadException if retrieval fails
      */
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/projects/{projectId}/contracts", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Object> listContracts(@RequestParam UUID projectId,
-                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
-        logger.info("--Inside listContracts method--");
+    public ResponseEntity<Object> listContractsByProject(@PathVariable UUID projectId,
+                                                         @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside listContractsByProject method--");
 
-        UUID userId = RequestUtil.extractUserId();
         List<ContractResponseDTO> response = contractService.listByProject(projectId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Retrieves all contracts raised for a client.
+     *
+     * @param clientId the client UUID
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing a list of {@link ContractResponseDTO}
+     * @throws SmartRoadException if retrieval fails
+     */
+    @GetMapping(path = "/clients/{clientId}/contracts", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> listContractsByClient(@PathVariable UUID clientId,
+                                                        @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside listContractsByClient method--");
+
+        List<ContractResponseDTO> response = contractService.listByClient(clientId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -99,13 +167,12 @@ public class ContractController {
      * @return {@link ResponseEntity} containing the {@link ContractResponseDTO}
      * @throws SmartRoadException if contract not found
      */
-    @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/contracts/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> getContract(@PathVariable UUID id,
                                               @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside getContract method--");
 
-        UUID userId = RequestUtil.extractUserId();
         ContractResponseDTO response = contractService.getById(id);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -120,14 +187,13 @@ public class ContractController {
      * @return {@link ResponseEntity} containing the updated {@link ContractResponseDTO}
      * @throws SmartRoadException if update fails
      */
-    @PutMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = "/contracts/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> updateContract(@PathVariable UUID id,
                                                  @RequestBody @Valid ContractRequestDTO request,
                                                  @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside updateContract method--");
 
-        UUID userId = RequestUtil.extractUserId();
         ContractResponseDTO response = contractService.update(id, request);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -138,18 +204,17 @@ public class ContractController {
      *
      * @param id the contract UUID
      * @param headers the HTTP request headers
-     * @return {@link ResponseEntity} with no content
+     * @return {@link ResponseEntity} with HTTP 200 OK on successful deletion
      * @throws SmartRoadException if delete fails
      */
-    @DeleteMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(path = "/contracts/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteContract(@PathVariable UUID id,
-                                               @RequestHeader HttpHeaders headers) throws SmartRoadException {
+    public ResponseEntity<Object> deleteContract(@PathVariable UUID id,
+                                                 @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside deleteContract method--");
 
-        UUID userId = RequestUtil.extractUserId();
         contractService.delete(id);
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

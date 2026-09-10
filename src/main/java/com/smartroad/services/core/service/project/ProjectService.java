@@ -132,6 +132,24 @@ public class ProjectService {
     }
 
     /**
+     * Archives a project (soft delete) resolving the owning organization from the project itself.
+     * Used by the {@code DELETE /projects/{id}} endpoint, which does not carry an organization ID.
+     *
+     * @param u the user UUID
+     * @param id the project UUID
+     * @throws SmartRoadException if project not found or user not authorized
+     */
+    @Transactional
+    public void archive(UUID u, UUID id) throws SmartRoadException {
+        ProjectEntity p = projects.findById(id)
+                .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "project.not.found"));
+        orgs.requireMember(u, p.getOrganizationId());
+        p.setArchived(true);
+        p.setModifiedBy(u);
+        projects.save(p);
+    }
+
+    /**
      * Finds a project with authorization check.
      *
      * @param u the user UUID

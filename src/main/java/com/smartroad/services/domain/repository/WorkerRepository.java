@@ -1,5 +1,6 @@
 package com.smartroad.services.domain.repository;
 
+import com.smartroad.services.common.enums.workers.WorkerStatusEnum;
 import com.smartroad.services.domain.entity.worker.WorkerEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -65,4 +66,28 @@ public interface WorkerRepository extends JpaRepository<WorkerEntity, UUID> {
      */
     @Query("SELECT COUNT(w) FROM WorkerEntity w WHERE w.organizationId = :organizationId AND w.isDeleted = FALSE")
     long countByOrganizationId(@Param("organizationId") UUID organizationId);
+
+    /**
+     * Counts workers in an organization that hold a given status.
+     *
+     * @param organizationId the organization UUID
+     * @param status the worker status to filter by
+     * @return count of matching workers
+     */
+    @Query("SELECT COUNT(w) FROM WorkerEntity w WHERE w.organizationId = :organizationId AND w.isDeleted = FALSE AND w.status = :status")
+    long countByOrganizationIdAndStatus(@Param("organizationId") UUID organizationId,
+                                        @Param("status") WorkerStatusEnum status);
+
+    /**
+     * Searches an organization's workers by first name, last name, phone number, or email.
+     * Matching is case-insensitive and partial.
+     *
+     * @param organizationId the organization UUID
+     * @param term the lowercased search term, already wrapped in wildcards
+     * @return list of matching {@link WorkerEntity} records
+     */
+    @Query("SELECT w FROM WorkerEntity w WHERE w.organizationId = :organizationId AND w.isDeleted = FALSE "
+            + "AND (LOWER(w.firstName) LIKE :term OR LOWER(w.lastName) LIKE :term "
+            + "OR LOWER(w.phoneNumber) LIKE :term OR LOWER(w.emailId) LIKE :term) ORDER BY w.firstName")
+    List<WorkerEntity> search(@Param("organizationId") UUID organizationId, @Param("term") String term);
 }

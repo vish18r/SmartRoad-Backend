@@ -200,4 +200,51 @@ public class RoadController {
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    /**
+     * Updates an existing road section.
+     *
+     * @param roadId the UUID of the road
+     * @param sectionId the UUID of the road section
+     * @param request the road section update request
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the updated {@link RoadSectionResponseDTO}
+     * @throws SmartRoadException if road or section not found or update fails
+     */
+    @PutMapping(path = "/roads/{roadId}/sections/{sectionId}", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> updateRoadSection(@PathVariable UUID roadId,
+                                                    @PathVariable UUID sectionId,
+                                                    @RequestBody @Valid RoadSectionRequestDTO request,
+                                                    @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside updateRoadSection method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        RoadSectionResponseDTO response = roadService.updateSection(userId, roadId, sectionId, request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Deletes a road section.
+     *
+     * @param roadId the UUID of the road
+     * @param sectionId the UUID of the road section
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK on successful deletion
+     * @throws SmartRoadException if road or section not found or deletion fails
+     */
+    @DeleteMapping(path = "/roads/{roadId}/sections/{sectionId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> deleteRoadSection(@PathVariable UUID roadId,
+                                                    @PathVariable UUID sectionId,
+                                                    @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside deleteRoadSection method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        roadService.deleteSection(userId, roadId, sectionId);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }

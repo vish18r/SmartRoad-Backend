@@ -42,6 +42,27 @@ public interface ContractRepository extends JpaRepository<ContractEntity, UUID> 
     Optional<ContractEntity> findByContractNumber(@Param("contractNumber") String contractNumber);
 
     /**
+     * Finds all contracts raised for a client.
+     *
+     * @param clientId the client UUID
+     * @return list of contracts for the client
+     */
+    @Query("SELECT c FROM ContractEntity c WHERE c.clientId = :clientId")
+    List<ContractEntity> findByClientId(@Param("clientId") UUID clientId);
+
+    /**
+     * Searches contracts by contract number, work order number, or agreement number.
+     * Matching is case-insensitive and partial.
+     *
+     * @param term the lowercased search term, already wrapped in wildcards
+     * @return list of matching contracts
+     */
+    @Query("SELECT c FROM ContractEntity c WHERE LOWER(c.contractNumber) LIKE :term "
+            + "OR LOWER(c.workOrderNumber) LIKE :term "
+            + "OR LOWER(c.agreementNumber) LIKE :term")
+    List<ContractEntity> search(@Param("term") String term);
+
+    /**
      * Counts contracts belonging to an organization, scoped through their project.
      *
      * @param organizationId the organization UUID

@@ -163,6 +163,53 @@ public class RoadService {
     }
 
     /**
+     * Updates an existing road section.
+     *
+     * @param u the user UUID
+     * @param roadId the road UUID
+     * @param sectionId the road section UUID
+     * @param r the road section request DTO
+     * @return the updated road section response DTO
+     * @throws SmartRoadException if road or section not found, user not authorized, or validation fails
+     */
+    @Transactional
+    public RoadSectionResponseDTO updateSection(UUID u, UUID roadId, UUID sectionId, RoadSectionRequestDTO r) throws SmartRoadException {
+        RoadSectionEntity s = section(u, roadId, sectionId);
+        apply(s, r);
+        s.setModifiedBy(u);
+        return sectionMap(sections.save(s));
+    }
+
+    /**
+     * Deletes a road section.
+     *
+     * @param u the user UUID
+     * @param roadId the road UUID
+     * @param sectionId the road section UUID
+     * @throws SmartRoadException if road or section not found or user not authorized
+     */
+    @Transactional
+    public void deleteSection(UUID u, UUID roadId, UUID sectionId) throws SmartRoadException {
+        sections.delete(section(u, roadId, sectionId));
+    }
+
+    /**
+     * Finds a road section scoped to its road, after verifying the caller may access the owning project.
+     *
+     * @param u the user UUID
+     * @param roadId the road UUID
+     * @param sectionId the road section UUID
+     * @return the RoadSectionEntity
+     * @throws SmartRoadException if road or section not found or user not authorized
+     */
+    private RoadSectionEntity section(UUID u, UUID roadId, UUID sectionId) throws SmartRoadException {
+        RoadEntity road = road(roadId);
+        project(u, road.getProjectId());
+        return sections.findByIdAndRoadId(sectionId, roadId)
+                .orElseThrow(() -> notFound("road.section.not.found"));
+    }
+
+    /**
      * Validates project exists and user is organization member.
      *
      * @param u the user UUID

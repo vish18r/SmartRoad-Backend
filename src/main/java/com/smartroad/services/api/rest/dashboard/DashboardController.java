@@ -2,10 +2,12 @@ package com.smartroad.services.api.rest.dashboard;
 
 import com.smartroad.services.api.utils.RequestUtil;
 import com.smartroad.services.common.exception.SmartRoadException;
+import com.smartroad.services.core.dto.dashboard.DashboardResponseDTO;
 import com.smartroad.services.core.dto.dashboard.DashboardStatsDTO;
 import com.smartroad.services.core.dto.dashboard.OwnerDashboardResponseDTO;
 import com.smartroad.services.core.service.dashboard.DashboardService;
 import com.smartroad.services.core.service.dashboard.OwnerDashboardService;
+import com.smartroad.services.core.service.organization.OrganizationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -36,35 +38,79 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
     private final OwnerDashboardService ownerDashboardService;
+    private final OrganizationService organizationService;
 
     /**
      * Constructs the controller with required service dependencies.
      *
      * @param dashboardService the dashboard service
      * @param ownerDashboardService the owner dashboard service
+     * @param organizationService the organization service, used to resolve the caller's organization
      */
     public DashboardController(DashboardService dashboardService,
-                               OwnerDashboardService ownerDashboardService) {
+                               OwnerDashboardService ownerDashboardService,
+                               OrganizationService organizationService) {
         this.dashboardService = dashboardService;
         this.ownerDashboardService = ownerDashboardService;
+        this.organizationService = organizationService;
+    }
+
+    /**
+     * Retrieves the aggregate dashboard payload — statistics plus a recent activity feed.
+     * The organization is optional; when omitted it is resolved from the caller's membership.
+     *
+     * @param organizationId the optional UUID of the organization
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing {@link DashboardResponseDTO}
+     * @throws SmartRoadException if the caller belongs to no organization or retrieval fails
+     */
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> getDashboard(@RequestParam(required = false) UUID organizationId,
+                                               @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside getDashboard method--");
+
+        DashboardResponseDTO response = dashboardService.getDashboard(resolveOrganization(organizationId));
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     /**
      * Retrieves dashboard statistics for an organization.
+     * The organization is optional; when omitted it is resolved from the caller's membership.
      *
-     * @param organizationId the UUID of the organization
+     * @param organizationId the optional UUID of the organization
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing {@link DashboardStatsDTO}
-     * @throws SmartRoadException if retrieval fails
+     * @throws SmartRoadException if the caller belongs to no organization or retrieval fails
      */
     @GetMapping(path = "/stats", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Object> getDashboardStats(@RequestParam UUID organizationId,
+    public ResponseEntity<Object> getDashboardStats(@RequestParam(required = false) UUID organizationId,
                                                     @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside getDashboardStats method--");
 
-        UUID userId = RequestUtil.extractUserId();
-        DashboardStatsDTO response = dashboardService.getDashboardStats(organizationId);
+        DashboardStatsDTO response = dashboardService.getDashboardStats(resolveOrganization(organizationId));
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Retrieves the project-focused dashboard statistics for an organization.
+     * The organization is optional; when omitted it is resolved from the caller's membership.
+     *
+     * @param organizationId the optional UUID of the organization
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing {@link DashboardStatsDTO}
+     * @throws SmartRoadException if the caller belongs to no organization or retrieval fails
+     */
+    @GetMapping(path = "/projects", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> getProjectDashboard(@RequestParam(required = false) UUID organizationId,
+                                                       @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside getProjectDashboard method--");
+
+        DashboardStatsDTO response = dashboardService.getDashboardStats(resolveOrganization(organizationId));
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -72,20 +118,35 @@ public class DashboardController {
     /**
      * Retrieves the executive owner dashboard for an organization, covering
      * portfolio, contract, financial, and deadline metrics.
+     * The organization is optional; when omitted it is resolved from the caller's membership.
      *
-     * @param organizationId the UUID of the organization
+     * @param organizationId the optional UUID of the organization
      * @param headers the HTTP request headers
      * @return {@link ResponseEntity} containing {@link OwnerDashboardResponseDTO}
-     * @throws SmartRoadException if retrieval fails
+     * @throws SmartRoadException if the caller belongs to no organization or retrieval fails
      */
     @GetMapping(path = "/owner", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Object> getOwnerDashboard(@RequestParam UUID organizationId,
+    public ResponseEntity<Object> getOwnerDashboard(@RequestParam(required = false) UUID organizationId,
                                                     @RequestHeader HttpHeaders headers) throws SmartRoadException {
         logger.info("--Inside getOwnerDashboard method--");
 
-        OwnerDashboardResponseDTO response = ownerDashboardService.getOwnerDashboard(organizationId);
+        OwnerDashboardResponseDTO response = ownerDashboardService.getOwnerDashboard(resolveOrganization(organizationId));
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Returns the supplied organization, or resolves the caller's own organization when none was supplied.
+     *
+     * @param organizationId the organization UUID from the request, possibly null
+     * @return the organization UUID to report on
+     * @throws SmartRoadException if no organization was supplied and the caller belongs to none
+     */
+    private UUID resolveOrganization(UUID organizationId) throws SmartRoadException {
+        if (organizationId != null) {
+            return organizationId;
+        }
+        return organizationService.resolveDefaultOrganizationId(RequestUtil.extractUserId());
     }
 }

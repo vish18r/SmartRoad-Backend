@@ -76,15 +76,15 @@ public class OrganizationService {
     public List<OrganizationMemberResponseDTO> listMembers(UUID userId, UUID organizationId) throws SmartRoadException {
         requireMember(userId, organizationId);
         return members.findByOrganizationIdAndActiveTrue(organizationId).stream()
-                .map(member -> new OrganizationMemberResponseDTO(member.getUserId(), UserRole.valueOf(member.getRole()), Boolean.TRUE.equals(member.getActive())))
+                .map(this::toMemberResponse)
                 .toList();
     }
 
     @Transactional
-    public void addMember(UUID actorId, UUID organizationId, OrganizationMemberRequestDTO request) throws SmartRoadException {
+    public OrganizationMemberResponseDTO addMember(UUID actorId, UUID organizationId, OrganizationMemberRequestDTO request) throws SmartRoadException {
         requireAdmin(actorId, organizationId);
         if (!users.existsById(request.userId())) throw notFound("user.not.found");
-        OrganizationMemberEntity member = members.findByOrganizationIdAndUserIdAndActiveTrue(organizationId, request.userId()).orElse(null);
+        OrganizationMemberEntity member = members.findByOrganizationIdAndUserId(organizationId, request.userId()).orElse(null);
         if (member == null) {
             member = new OrganizationMemberEntity();
             member.setOrganizationId(organizationId);
@@ -92,7 +92,8 @@ public class OrganizationService {
         }
         member.setRole(request.role().getValue());
         member.setActive(true);
-        members.save(member);
+        member.setModifiedBy(actorId);
+        return toMemberResponse(members.save(member));
     }
 
     @Transactional
@@ -141,6 +142,33 @@ public class OrganizationService {
         OrganizationEntity organization = find(organizationId);
         organization.setActive(false);
         organizations.save(organization);
+    }
+
+    /**
+     * Maps an organization member entity to its response DTO.
+     *
+     * @param member the organization member entity
+     * @return the organization member response DTO
+     */
+    private OrganizationMemberResponseDTO toMemberResponse(OrganizationMemberEntity member) {
+        return new OrganizationMemberResponseDTO(member.getUserId(), UserRole.valueOf(member.getRole()),
+                Boolean.TRUE.equals(member.getActive()));
+    }
+
+    /**
+     * Resolves the organization a request should act on when the client did not supply one.
+     * Returns the first organization the user is an active member of.
+     *
+     * @param userId the authenticated user's UUID
+     * @return the resolved organization UUID
+     * @throws SmartRoadException if the user is not an active member of any organization
+     */
+    @Transactional(readOnly = true)
+    public UUID resolveDefaultOrganizationId(UUID userId) throws SmartRoadException {
+        return members.findByUserIdAndActiveTrue(userId).stream()
+                .map(OrganizationMemberEntity::getOrganizationId)
+                .findFirst()
+                .orElseThrow(() -> notFound("organization.membership.not.found"));
     }
 
     public OrganizationMemberEntity requireMember(UUID userId, UUID organizationId) throws SmartRoadException {

@@ -4,15 +4,22 @@ import com.smartroad.services.common.enums.workers.WorkerStatusEnum;
 import com.smartroad.services.common.exception.ApplicationLayer;
 import com.smartroad.services.common.exception.ErrorCodeMapping;
 import com.smartroad.services.common.exception.SmartRoadException;
+import com.smartroad.services.core.dto.workers.AttendanceRequestDTO;
+import com.smartroad.services.core.dto.workers.AttendanceResponseDTO;
 import com.smartroad.services.core.dto.workers.WorkerRequestDTO;
 import com.smartroad.services.core.dto.workers.WorkerResponseDTO;
 import com.smartroad.services.core.mapper.workers.WorkerMapper;
 import com.smartroad.services.core.service.organization.OrganizationService;
+import com.smartroad.services.domain.entity.worker.WorkerAttendanceEntity;
 import com.smartroad.services.domain.entity.worker.WorkerEntity;
+import com.smartroad.services.domain.repository.WorkerAttendanceRepository;
 import com.smartroad.services.domain.repository.WorkerRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +34,7 @@ import java.util.UUID;
 public class WorkerService {
 
     private final WorkerRepository workerRepository;
+    private final WorkerAttendanceRepository attendanceRepository;
     private final WorkerMapper workerMapper;
     private final OrganizationService organizationService;
 
@@ -34,11 +42,16 @@ public class WorkerService {
      * Constructs the service with required dependencies.
      *
      * @param workerRepository the worker repository
+     * @param attendanceRepository the worker attendance repository
      * @param workerMapper the worker mapper
      * @param organizationService the organization service
      */
-    public WorkerService(WorkerRepository workerRepository, WorkerMapper workerMapper, OrganizationService organizationService) {
+    public WorkerService(WorkerRepository workerRepository,
+                         WorkerAttendanceRepository attendanceRepository,
+                         WorkerMapper workerMapper,
+                         OrganizationService organizationService) {
         this.workerRepository = workerRepository;
+        this.attendanceRepository = attendanceRepository;
         this.workerMapper = workerMapper;
         this.organizationService = organizationService;
     }
@@ -101,6 +114,28 @@ public class WorkerService {
             .stream()
             .map(workerMapper::toWorkerResponseDTO)
             .toList();
+    }
+
+    /**
+     * Searches an organization's workers by name, phone number, or email.
+     * A blank or missing term returns an empty list rather than the full roster.
+     *
+     * @param userId the UUID of the requesting user
+     * @param organizationId the organization UUID
+     * @param query the free-text search term
+     * @return list of matching {@link WorkerResponseDTO}
+     * @throws SmartRoadException if the user is not a member of the organization
+     */
+    @Transactional(readOnly = true)
+    public List<WorkerResponseDTO> search(UUID userId, UUID organizationId, String query) throws SmartRoadException {
+        organizationService.requireMember(userId, organizationId);
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        String term = "%" + query.trim().toLowerCase() + "%";
+        return workerRepository.search(organizationId, term).stream()
+                .map(workerMapper::toWorkerResponseDTO)
+                .toList();
     }
 
     /**
@@ -193,5 +228,120 @@ public class WorkerService {
     @Transactional(readOnly = true)
     public long getWorkerCountByOrganization(UUID organizationId) {
         return workerRepository.countByOrganizationId(organizationId);
+    }
+
+    /**
+     * Marks a worker attendance entry for a project on a given day.
+     * Marking the same worker, project, and date twice updates the existing record rather than
+     * creating a duplicate, so the register holds at most one row per worker per project per day.
+     *
+     * @param userId the UUID of the user recording the attendance
+     * @param request the attendance request
+     * @return the persisted {@link AttendanceResponseDTO}
+     * @throws SmartRoadException if the worker is not found or the user does not belong to its organization
+     */
+    @Transactional
+    public AttendanceResponseDTO markAttendance(UUID userId, AttendanceRequestDTO request) throws SmartRoadException {
+        WorkerEntity worker = requireWorker(userId, request.workerId());
+
+        WorkerAttendanceEntity entity = attendanceRepository
+                .findByWorkerIdAndProjectIdAndAttendanceDate(worker.getId(), request.projectId(), request.attendanceDate())
+                .orElseGet(() -> WorkerAttendanceEntity.builder()
+                        .workerId(worker.getId())
+                        .projectId(request.projectId())
+                        .attendanceDate(request.attendanceDate())
+                        .build());
+
+        entity.setStatus(request.status());
+        entity.setHoursWorked(request.hoursWorked());
+        entity.setNotes(request.notes());
+        entity.setModifiedBy(userId);
+
+        return toAttendanceResponse(attendanceRepository.save(entity));
+    }
+
+    /**
+     * Retrieves the attendance records of a worker, optionally narrowed to a single calendar month.
+     *
+     * @param userId the UUID of the requesting user
+     * @param workerId the worker UUID
+     * @param month the month to report on in yyyy-MM form, or null for the full history
+     * @return list of {@link AttendanceResponseDTO} ordered most recent first
+     * @throws SmartRoadException if the worker is not found, the user does not belong to its
+     *                            organization, or the month cannot be parsed
+     */
+    @Transactional(readOnly = true)
+    public List<AttendanceResponseDTO> listAttendance(UUID userId, UUID workerId, String month) throws SmartRoadException {
+        requireWorker(userId, workerId);
+
+        List<WorkerAttendanceEntity> records = month == null || month.isBlank()
+                ? attendanceRepository.findByWorkerId(workerId)
+                : findAttendanceForMonth(workerId, month);
+
+        return records.stream().map(this::toAttendanceResponse).toList();
+    }
+
+    /**
+     * Loads the attendance of a worker for the given calendar month.
+     *
+     * @param workerId the worker UUID
+     * @param month the month in yyyy-MM form
+     * @return list of attendance records inside that month
+     * @throws SmartRoadException if the month cannot be parsed
+     */
+    private List<WorkerAttendanceEntity> findAttendanceForMonth(UUID workerId, String month) throws SmartRoadException {
+        YearMonth yearMonth = parseMonth(month);
+        LocalDate from = yearMonth.atDay(1);
+        LocalDate to = yearMonth.atEndOfMonth();
+        return attendanceRepository.findByWorkerIdAndDateRange(workerId, from, to);
+    }
+
+    /**
+     * Parses a yyyy-MM month string.
+     *
+     * @param month the month string
+     * @return the parsed {@link YearMonth}
+     * @throws SmartRoadException if the string is not a valid yyyy-MM month
+     */
+    private YearMonth parseMonth(String month) throws SmartRoadException {
+        try {
+            return YearMonth.parse(month.trim());
+        } catch (DateTimeParseException e) {
+            throw new SmartRoadException(
+                ApplicationLayer.SERVICE_LAYER,
+                ErrorCodeMapping.SERVICE_INVALID_INPUT,
+                "attendance.month.invalid"
+            );
+        }
+    }
+
+    /**
+     * Loads a worker and verifies the caller belongs to the organization of that worker.
+     *
+     * @param userId the UUID of the requesting user
+     * @param workerId the worker UUID
+     * @return the {@link WorkerEntity}
+     * @throws SmartRoadException if the worker is not found or the user does not belong to its organization
+     */
+    private WorkerEntity requireWorker(UUID userId, UUID workerId) throws SmartRoadException {
+        WorkerEntity worker = workerRepository.findById(workerId)
+            .orElseThrow(() -> new SmartRoadException(
+                ApplicationLayer.SERVICE_LAYER,
+                ErrorCodeMapping.DAO_NOT_FOUND,
+                "worker.not.found"
+            ));
+        organizationService.requireMember(userId, worker.getOrganizationId());
+        return worker;
+    }
+
+    /**
+     * Maps an attendance entity to its response DTO.
+     *
+     * @param entity the attendance entity
+     * @return the attendance response DTO
+     */
+    private AttendanceResponseDTO toAttendanceResponse(WorkerAttendanceEntity entity) {
+        return new AttendanceResponseDTO(entity.getId(), entity.getWorkerId(), entity.getProjectId(),
+                entity.getAttendanceDate(), entity.getStatus(), entity.getHoursWorked(), entity.getNotes());
     }
 }

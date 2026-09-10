@@ -2,6 +2,8 @@ package com.smartroad.services.api.rest.organization;
 
 import com.smartroad.services.api.utils.RequestUtil;
 import com.smartroad.services.common.exception.SmartRoadException;
+import com.smartroad.services.core.dto.organization.OrganizationMemberRequestDTO;
+import com.smartroad.services.core.dto.organization.OrganizationMemberResponseDTO;
 import com.smartroad.services.core.dto.organization.OrganizationRequestDTO;
 import com.smartroad.services.core.dto.organization.OrganizationResponseDTO;
 import com.smartroad.services.core.service.organization.OrganizationService;
@@ -165,6 +167,72 @@ public class OrganizationController {
 
         UUID userId = RequestUtil.extractUserId();
         organizationService.deactivate(userId, id);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    /**
+     * Adds a user to an organization, or reactivates and re-roles an existing membership.
+     *
+     * @param organizationId the UUID of the organization
+     * @param request the membership request carrying the target user and role
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the created {@link OrganizationMemberResponseDTO}
+     * @throws SmartRoadException if the organization or user is not found, or the caller is not an organization admin
+     */
+    @PostMapping(path = "/{organizationId}/members", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> addOrganizationMember(@PathVariable UUID organizationId,
+                                                        @RequestBody @Valid OrganizationMemberRequestDTO request,
+                                                        @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside addOrganizationMember method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        OrganizationMemberResponseDTO response = organizationService.addMember(userId, organizationId, request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Retrieves the active members of an organization.
+     *
+     * @param organizationId the UUID of the organization
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing a list of {@link OrganizationMemberResponseDTO}
+     * @throws SmartRoadException if the organization is not found or the caller is not a member
+     */
+    @GetMapping(path = "/{organizationId}/members", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> listOrganizationMembers(@PathVariable UUID organizationId,
+                                                          @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside listOrganizationMembers method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        List<OrganizationMemberResponseDTO> response = organizationService.listMembers(userId, organizationId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Removes a member from an organization by deactivating their membership.
+     *
+     * @param organizationId the UUID of the organization
+     * @param memberId the UUID of the member's user account
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK on successful removal
+     * @throws SmartRoadException if the membership is not found, the caller is not an organization admin,
+     *                            or the caller is attempting to remove themselves
+     */
+    @DeleteMapping(path = "/{organizationId}/members/{memberId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> removeOrganizationMember(@PathVariable UUID organizationId,
+                                                           @PathVariable UUID memberId,
+                                                           @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside removeOrganizationMember method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        organizationService.removeMember(userId, organizationId, memberId);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

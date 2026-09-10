@@ -1,6 +1,9 @@
 package com.smartroad.services.core.dto.material;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
+
+import java.math.BigDecimal;
 
 /**
  * Request DTO for creating/updating materials.
@@ -21,5 +24,8 @@ public record MaterialRequestDTO(
 
     String category,
 
-    String description
+    String description,
+
+    @PositiveOrZero(message = "{minimum.stock.invalid}")
+    BigDecimal minimumStock
 ) {}

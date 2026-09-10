@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -131,5 +132,25 @@ public class ProjectController {
         ProjectResponseDTO response = projectService.update(userId, id, request);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Archives a project (soft delete).
+     *
+     * @param id the UUID of the project
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK on successful archival
+     * @throws SmartRoadException if project not found or the user is not authorized
+     */
+    @DeleteMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> deleteProject(@PathVariable UUID id,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside deleteProject method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        projectService.archive(userId, id);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

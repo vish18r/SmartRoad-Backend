@@ -116,6 +116,53 @@ public class ContractService {
     }
 
     /**
+     * Retrieves every contract, unfiltered.
+     * Used when the client requests the contract list without a project filter.
+     *
+     * @return list of contract response DTOs
+     */
+    @Transactional(readOnly = true)
+    public List<ContractResponseDTO> listAll() {
+        return contractRepository.findAll()
+            .stream()
+            .map(this::mapToResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieves all contracts raised for a client.
+     *
+     * @param clientId the client UUID
+     * @return list of contract response DTOs
+     */
+    @Transactional(readOnly = true)
+    public List<ContractResponseDTO> listByClient(UUID clientId) {
+        return contractRepository.findByClientId(clientId)
+            .stream()
+            .map(this::mapToResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Searches contracts by contract number, work order number, or agreement number.
+     * A blank or missing term returns an empty list rather than the full table.
+     *
+     * @param query the free-text search term
+     * @return list of matching contract response DTOs
+     */
+    @Transactional(readOnly = true)
+    public List<ContractResponseDTO> search(String query) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        String term = "%" + query.trim().toLowerCase() + "%";
+        return contractRepository.search(term)
+            .stream()
+            .map(this::mapToResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
      * Updates an existing contract.
      *
      * @param id the contract UUID

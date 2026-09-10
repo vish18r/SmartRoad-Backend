@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -21,4 +22,13 @@ public interface RoadSectionRepository extends JpaRepository<RoadSectionEntity, 
      * @return list of matching road section entities
      */
     List<RoadSectionEntity> findByRoadId(UUID roadId);
+
+    /**
+     * Finds a single road section scoped to its parent road.
+     *
+     * @param id the road section UUID
+     * @param roadId the road UUID
+     * @return optional containing the matching section, or empty if not found
+     */
+    Optional<RoadSectionEntity> findByIdAndRoadId(UUID id, UUID roadId);
 }

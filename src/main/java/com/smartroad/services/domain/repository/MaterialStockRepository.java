@@ -39,4 +39,13 @@ public interface MaterialStockRepository extends JpaRepository<MaterialStockEnti
     @Query("SELECT s FROM MaterialStockEntity s WHERE s.projectId = :projectId AND s.materialId = :materialId")
     Optional<MaterialStockEntity> findByProjectIdAndMaterialId(@Param("projectId") UUID projectId,
                                                                @Param("materialId") UUID materialId);
+
+    /**
+     * Finds all stock records for a material across every project.
+     *
+     * @param materialId the material UUID
+     * @return list of stock records
+     */
+    @Query("SELECT s FROM MaterialStockEntity s WHERE s.materialId = :materialId")
+    List<MaterialStockEntity> findByMaterialId(@Param("materialId") UUID materialId);
 }
