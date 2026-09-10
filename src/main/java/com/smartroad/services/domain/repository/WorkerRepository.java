@@ -90,4 +90,13 @@ public interface WorkerRepository extends JpaRepository<WorkerEntity, UUID> {
             + "AND (LOWER(w.firstName) LIKE :term OR LOWER(w.lastName) LIKE :term "
             + "OR LOWER(w.phoneNumber) LIKE :term OR LOWER(w.emailId) LIKE :term) ORDER BY w.firstName")
     List<WorkerEntity> search(@Param("organizationId") UUID organizationId, @Param("term") String term);
+
+    /**
+     * Counts the workers posted to a site.
+     *
+     * @param siteId the site (project) UUID
+     * @return count of workers assigned to the site
+     */
+    @Query("SELECT COUNT(w) FROM WorkerEntity w WHERE w.assignedSiteId = :siteId AND w.isDeleted = FALSE")
+    long countByAssignedSiteId(@Param("siteId") UUID siteId);
 }

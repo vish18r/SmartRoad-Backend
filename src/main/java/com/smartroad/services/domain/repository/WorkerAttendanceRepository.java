@@ -1,11 +1,13 @@
 package com.smartroad.services.domain.repository;
 
+import com.smartroad.services.common.enums.workers.AttendanceStatusEnum;
 import com.smartroad.services.domain.entity.worker.WorkerAttendanceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -58,4 +60,30 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
      */
     @Query("SELECT a FROM WorkerAttendanceEntity a WHERE a.workerId = :workerId ORDER BY a.attendanceDate DESC")
     List<WorkerAttendanceEntity> findByWorkerId(@Param("workerId") UUID workerId);
+
+    /**
+     * Counts a project's attendance records for one day that hold a given status.
+     *
+     * @param projectId the project UUID
+     * @param attendanceDate the day to report on
+     * @param status the attendance status to filter by
+     * @return count of matching records
+     */
+    @Query("SELECT COUNT(a) FROM WorkerAttendanceEntity a WHERE a.projectId = :projectId "
+            + "AND a.attendanceDate = :attendanceDate AND a.status = :status")
+    long countByProjectAndDateAndStatus(@Param("projectId") UUID projectId,
+                                        @Param("attendanceDate") LocalDate attendanceDate,
+                                        @Param("status") AttendanceStatusEnum status);
+
+    /**
+     * Sums the hours recorded against a project for one day.
+     *
+     * @param projectId the project UUID
+     * @param attendanceDate the day to report on
+     * @return summed hours, or null when nothing was recorded
+     */
+    @Query("SELECT SUM(a.hoursWorked) FROM WorkerAttendanceEntity a WHERE a.projectId = :projectId "
+            + "AND a.attendanceDate = :attendanceDate")
+    BigDecimal sumHoursByProjectAndDate(@Param("projectId") UUID projectId,
+                                        @Param("attendanceDate") LocalDate attendanceDate);
 }
