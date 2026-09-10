@@ -5,6 +5,7 @@ import com.smartroad.services.common.enums.stock.StockTransferStatusEnum;
 import com.smartroad.services.common.exception.ApplicationLayer;
 import com.smartroad.services.common.exception.ErrorCodeMapping;
 import com.smartroad.services.common.exception.SmartRoadException;
+import com.smartroad.services.core.dto.material.PaginationMetaDTO;
 import com.smartroad.services.core.dto.material.StockLedgerEntryResponseDTO;
 import com.smartroad.services.core.dto.material.StockLedgerPageResponseDTO;
 import com.smartroad.services.core.dto.stock.StockTransferRequestDTO;
@@ -119,12 +120,17 @@ public class StockService {
         Page<MaterialStockLedgerEntity> results =
                 ledgerRepository.findByMaterialId(materialId, PageRequest.of(pageIndex, pageSize));
 
-        return new StockLedgerPageResponseDTO(
-                results.getContent().stream().map(this::toLedgerResponse).toList(),
+        PaginationMetaDTO pagination = new PaginationMetaDTO(
                 pageIndex + 1,
                 pageSize,
                 results.getTotalElements(),
-                results.getTotalPages());
+                results.getTotalPages(),
+                results.hasNext(),
+                results.hasPrevious());
+
+        return new StockLedgerPageResponseDTO(
+                results.getContent().stream().map(this::toLedgerResponse).toList(),
+                pagination);
     }
 
     /**
