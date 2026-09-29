@@ -176,7 +176,7 @@ public class ProjectService {
         p.setName(r.name());
         p.setDescription(r.description());
         p.setLocation(r.location());
-        p.setStatus(r.status().name());
+        p.setStatus(r.status() != null ? r.status().name() : ProjectStatus.DRAFT.name());
         p.setBudget(r.budget());
         p.setProgress(r.progress() == null ? BigDecimal.ZERO : r.progress());
         p.setStartDate(r.startDate() == null ? null : Date.valueOf(r.startDate()));
@@ -192,8 +192,9 @@ public class ProjectService {
     private ProjectResponseDTO map(ProjectEntity p) {
         LocalDate startDate = p.getStartDate() == null ? null : p.getStartDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
         LocalDate endDate = p.getEndDate() == null ? null : p.getEndDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        ProjectStatus status = p.getStatus() != null ? ProjectStatus.valueOf(p.getStatus()) : ProjectStatus.DRAFT;
         return new ProjectResponseDTO(p.getId(), p.getOrganizationId(), p.getClientId(), p.getCode(), p.getName(),
-                p.getDescription(), p.getLocation(), ProjectStatus.valueOf(p.getStatus()), p.getBudget(), p.getActualCost(), p.getProgress(),
+                p.getDescription(), p.getLocation(), status, p.getBudget(), p.getActualCost(), p.getProgress(),
                 startDate, endDate, Boolean.TRUE.equals(p.getArchived()));
     }
 }

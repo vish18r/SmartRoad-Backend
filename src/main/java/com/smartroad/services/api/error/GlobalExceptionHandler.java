@@ -2,9 +2,12 @@ package com.smartroad.services.api.error;
 
 import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.core.dto.SmartRoadResponseDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,6 +21,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private final MessageSource messageSource;
 
@@ -50,10 +55,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(SmartRoadResponseDTO.error("Access denied"));
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<SmartRoadResponseDTO<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        logger.error("Data integrity violation", ex);
+        String msg = ex.getMostSpecificCause().getMessage();
+        if (msg != null && msg.contains("uq_")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(SmartRoadResponseDTO.error("A record with those details already exists."));
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(SmartRoadResponseDTO.error("Data constraint violation: " + (msg != null ? msg : "unknown")));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<SmartRoadResponseDTO<Void>> handleGenericException(Exception ex) {
+        logger.error("Unhandled exception [{}]: {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(SmartRoadResponseDTO.error("Something went wrong: " + ex.getMessage()));
+                .body(SmartRoadResponseDTO.error("Something went wrong: " + detail));
     }
 
     private String resolveMessage(String messageKey, java.util.List<String> arguments) {
