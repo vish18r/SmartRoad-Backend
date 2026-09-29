@@ -139,13 +139,16 @@ public class OrganizationService {
     /**
      * Deletes (deactivates) an organization by ID.
      *
+     * @param userId the UUID of the user performing the deletion
      * @param organizationId the UUID of the organization to delete
-     * @throws SmartRoadException if organization not found
+     * @throws SmartRoadException if organization not found or user lacks permission
      */
     @Transactional
-    public void delete(UUID organizationId) throws SmartRoadException {
+    public void delete(UUID userId, UUID organizationId) throws SmartRoadException {
+        requireAdmin(userId, organizationId);
         OrganizationEntity organization = find(organizationId);
         organization.setActive(false);
+        organization.setModifiedBy(userId);
         organizations.save(organization);
     }
 
