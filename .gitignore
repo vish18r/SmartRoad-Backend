@@ -39,7 +39,5 @@ logs/
 .DS_Store
 Thumbs.db
 
-### Markdown docs (kept local; README.md and CLAUDE.md stay tracked) ###
-*.md
-!README.md
-!CLAUDE.md
+### Local docs ###
+docs/
