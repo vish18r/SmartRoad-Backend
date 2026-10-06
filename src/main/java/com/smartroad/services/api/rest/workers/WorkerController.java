@@ -1,10 +1,14 @@
 package com.smartroad.services.api.rest.workers;
 
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 import com.smartroad.services.api.utils.RequestUtil;
 import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.common.util.NextentiConstants;
 import com.smartroad.services.core.dto.workers.AttendanceRequestDTO;
 import com.smartroad.services.core.dto.workers.AttendanceResponseDTO;
+import com.smartroad.services.core.dto.workers.WorkerFaceRequestDTO;
+import com.smartroad.services.core.dto.workers.WorkerFaceStatusResponseDTO;
 import com.smartroad.services.core.dto.workers.WorkerRequestDTO;
 import com.smartroad.services.core.dto.workers.WorkerResponseDTO;
 import com.smartroad.services.core.service.organization.OrganizationService;
@@ -228,6 +232,91 @@ public class WorkerController {
         AttendanceResponseDTO response = workerService.markAttendance(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Registers (or replaces) a worker's face template.
+     *
+     * @param id the UUID of the worker
+     * @param request the face descriptor
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the updated {@link WorkerResponseDTO}
+     * @throws SmartRoadException if the worker is not found, the caller is not authorized, or the face data is invalid
+     */
+    @PostMapping(path = "/{id}/face", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> registerFace(@PathVariable UUID id,
+                                               @RequestBody WorkerFaceRequestDTO request,
+                                               @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside registerFace method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        WorkerResponseDTO response = workerService.registerFace(userId, id, request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Reports whether a worker has a registered face.
+     *
+     * @param id the UUID of the worker
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the {@link WorkerFaceStatusResponseDTO}
+     * @throws SmartRoadException if the worker is not found or the caller is not authorized
+     */
+    @GetMapping(path = "/{id}/face-status", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> getFaceStatus(@PathVariable UUID id,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside getFaceStatus method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        WorkerFaceStatusResponseDTO response = workerService.getFaceStatus(userId, id);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Finds a worker by employee ID such as SR1, for QR check-in.
+     *
+     * @param employeeId the employee ID
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the matching {@link WorkerResponseDTO}
+     * @throws SmartRoadException if no worker holds the ID or the caller is not authorized
+     */
+    @GetMapping(path = "/by-employee-id", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> getByEmployeeId(@RequestParam String employeeId,
+                                                  @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside getByEmployeeId method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        WorkerResponseDTO response = workerService.findByEmployeeId(userId, employeeId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Retrieves every attendance record of a project for one day.
+     *
+     * @param projectId the UUID of the project
+     * @param date the day to report on
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing a list of {@link AttendanceResponseDTO}
+     * @throws SmartRoadException if the project is not found or the caller is not authorized
+     */
+    @GetMapping(path = "/attendance", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> listProjectAttendance(@RequestParam UUID projectId,
+                                                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                                        @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside listProjectAttendance method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        List<AttendanceResponseDTO> response = workerService.listProjectAttendance(userId, projectId, date);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     /**

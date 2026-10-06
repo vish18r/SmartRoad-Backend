@@ -98,6 +98,12 @@ public class WorkerEntity extends SmartRoadBaseEntity {
     @Column(name = "experience_years")
     private Integer experienceYears;
 
+    @Column(name = "employee_id", nullable = false, unique = true, updatable = false)
+    private String employeeId;
+
+    @Column(name = "face_descriptor", columnDefinition = "TEXT")
+    private String faceDescriptor;
+
     @Column(name = "is_deleted")
     private Boolean isDeleted;
 }

@@ -86,4 +86,16 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
             + "AND a.attendanceDate = :attendanceDate")
     BigDecimal sumHoursByProjectAndDate(@Param("projectId") UUID projectId,
                                         @Param("attendanceDate") LocalDate attendanceDate);
+
+    /**
+     * Finds every attendance record of a project for one day.
+     *
+     * @param projectId the project UUID
+     * @param attendanceDate the day to report on
+     * @return list of matching attendance records
+     */
+    @Query("SELECT a FROM WorkerAttendanceEntity a WHERE a.projectId = :projectId "
+            + "AND a.attendanceDate = :attendanceDate")
+    List<WorkerAttendanceEntity> findByProjectIdAndAttendanceDate(@Param("projectId") UUID projectId,
+                                                                   @Param("attendanceDate") LocalDate attendanceDate);
 }

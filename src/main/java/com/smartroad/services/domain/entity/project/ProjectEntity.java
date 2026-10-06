@@ -66,7 +66,8 @@ public class ProjectEntity extends SmartRoadBaseEntity {
     @Column(name = "status")
     private String status;
 
+    @Builder.Default
     @Column(name = "archived")
-    private Boolean archived;
+    private Boolean archived = false;
 }
 

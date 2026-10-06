@@ -99,4 +99,41 @@ public interface WorkerRepository extends JpaRepository<WorkerEntity, UUID> {
      */
     @Query("SELECT COUNT(w) FROM WorkerEntity w WHERE w.assignedSiteId = :siteId AND w.isDeleted = FALSE")
     long countByAssignedSiteId(@Param("siteId") UUID siteId);
+
+    /**
+     * Takes the next value of the employee-id sequence. The sequence is atomic across concurrent
+     * registrations and never hands a value out twice or reuses one.
+     *
+     * @return the next employee number
+     */
+    @Query(value = "SELECT nextval('sr_employee_id_seq')", nativeQuery = true)
+    long nextEmployeeNumber();
+
+    /**
+     * Checks whether a worker already uses a mobile number.
+     *
+     * @param phoneNumber the mobile number
+     * @return true if a worker already holds the number
+     */
+    @Query("SELECT CASE WHEN COUNT(w) > 0 THEN TRUE ELSE FALSE END FROM WorkerEntity w WHERE w.phoneNumber = :phoneNumber")
+    boolean existsByPhoneNumber(@Param("phoneNumber") String phoneNumber);
+
+    /**
+     * Finds a worker by employee ID, ignoring case.
+     *
+     * @param employeeId the employee ID, e.g. SR1
+     * @return optional containing the worker, or empty if not found
+     */
+    @Query("SELECT w FROM WorkerEntity w WHERE LOWER(w.employeeId) = LOWER(:employeeId) AND w.isDeleted = FALSE")
+    Optional<WorkerEntity> findByEmployeeId(@Param("employeeId") String employeeId);
+
+    /**
+     * Lists the workers of an organization that have a registered face.
+     *
+     * @param organizationId the organization UUID
+     * @return list of face-enrolled workers
+     */
+    @Query("SELECT w FROM WorkerEntity w WHERE w.organizationId = :organizationId AND w.isDeleted = FALSE "
+            + "AND w.faceDescriptor IS NOT NULL ORDER BY w.firstName")
+    List<WorkerEntity> findFaceEnrolled(@Param("organizationId") UUID organizationId);
 }

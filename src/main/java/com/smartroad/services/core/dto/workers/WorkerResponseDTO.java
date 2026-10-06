@@ -1,5 +1,6 @@
 package com.smartroad.services.core.dto.workers;
 
+import com.smartroad.services.common.enums.workers.WorkerFaceStatusEnum;
 import com.smartroad.services.common.enums.workers.WorkerStatusEnum;
 
 import java.time.LocalDate;
@@ -33,5 +34,8 @@ public record WorkerResponseDTO(
     String ifscCode,
     String emergencyContactName,
     String emergencyContactPhone,
-    Integer experienceYears
+    Integer experienceYears,
+    String employeeId,
+    String fullName,
+    WorkerFaceStatusEnum faceStatus
 ) {}

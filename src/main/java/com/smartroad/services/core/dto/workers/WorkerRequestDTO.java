@@ -22,11 +22,13 @@ public record WorkerRequestDTO(
     @NotBlank(message = "{first.name.required}")
     String firstName,
 
+    @NotBlank(message = "{last.name.required}")
     String lastName,
 
     @Email(message = "{email.invalid}")
     String emailId,
 
+    @NotBlank(message = "{phone.required}")
     @Pattern(regexp = "^\\+?[0-9]{10,}$", message = "{phone.invalid}")
     String phoneNumber,
 
@@ -61,5 +63,6 @@ public record WorkerRequestDTO(
 
     String emergencyContactPhone,
 
-    Integer experienceYears
+    Integer experienceYears,
+    String faceDescriptor
 ) {}

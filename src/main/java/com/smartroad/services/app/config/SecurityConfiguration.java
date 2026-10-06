@@ -1,5 +1,6 @@
 package com.smartroad.services.app.config;
 
+import com.smartroad.services.common.util.NextentiConstants;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -68,7 +69,9 @@ public class SecurityConfiguration {
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization", "Content-Type", "Accept", "Origin",
                 "Access-Control-Request-Method", "Access-Control-Request-Headers",
-                "X-Requested-With"
+                "X-Requested-With",
+                NextentiConstants.HEADER_PROJECT_ID, NextentiConstants.HEADER_SEARCH, NextentiConstants.HEADER_PAGE,
+                NextentiConstants.HEADER_LIMIT, NextentiConstants.HEADER_MONTH
         ));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setAllowCredentials(true);

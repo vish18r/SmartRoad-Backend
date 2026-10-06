@@ -184,14 +184,27 @@ public class ProjectService {
     }
 
     /**
+     * Converts a persisted date to {@link LocalDate}; {@code java.sql.Date} does not support {@code toInstant()}.
+     *
+     * @param date the persisted date, may be null
+     * @return the local date, or null
+     */
+    private static LocalDate toLocalDate(java.util.Date date) {
+        if (date == null) {
+            return null;
+        }
+        return date instanceof Date sqlDate ? sqlDate.toLocalDate() : date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+    }
+
+    /**
      * Maps project entity to response DTO.
      *
      * @param p the project entity
      * @return the project response DTO
      */
     private ProjectResponseDTO map(ProjectEntity p) {
-        LocalDate startDate = p.getStartDate() == null ? null : p.getStartDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
-        LocalDate endDate = p.getEndDate() == null ? null : p.getEndDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        LocalDate startDate = toLocalDate(p.getStartDate());
+        LocalDate endDate = toLocalDate(p.getEndDate());
         ProjectStatus status = p.getStatus() != null ? ProjectStatus.valueOf(p.getStatus()) : ProjectStatus.DRAFT;
         return new ProjectResponseDTO(p.getId(), p.getOrganizationId(), p.getClientId(), p.getCode(), p.getName(),
                 p.getDescription(), p.getLocation(), status, p.getBudget(), p.getActualCost(), p.getProgress(),

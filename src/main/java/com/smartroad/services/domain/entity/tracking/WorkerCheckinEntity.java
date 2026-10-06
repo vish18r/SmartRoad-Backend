@@ -59,6 +59,12 @@ public class WorkerCheckinEntity extends SmartRoadBaseEntity {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @Column(name = "check_in_method")
+    private String checkInMethod;
+
+    @Column(name = "check_out_method")
+    private String checkOutMethod;
+
     @Column(name = "duration_minutes")
     private Integer durationMinutes;
 }

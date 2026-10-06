@@ -57,10 +57,21 @@ public class TrackingService {
     }
 
     /**
+     * Tells whether a worker currently has an open check-in on a project today.
+     *
+     * @param projectId the project UUID
+     * @param workerId the worker UUID
+     * @return true if the worker is checked in and not yet checked out
+     */
+    public boolean hasActiveCheckin(UUID projectId, UUID workerId) {
+        return workerCheckinRepository.findTodayActiveCheckin(projectId, workerId, LocalDate.now()).isPresent();
+    }
+
+    /**
      * Performs worker check-in with GPS location.
      */
     @Transactional
-    public void workerCheckIn(UUID projectId, UUID workerId, BigDecimal latitude, BigDecimal longitude, BigDecimal accuracy) throws SmartRoadException {
+    public WorkerCheckinEntity workerCheckIn(UUID projectId, UUID workerId, BigDecimal latitude, BigDecimal longitude, BigDecimal accuracy, String method) throws SmartRoadException {
         LocalDate today = LocalDate.now();
         var existing = workerCheckinRepository.findTodayActiveCheckin(projectId, workerId, today);
 
@@ -76,16 +87,18 @@ public class TrackingService {
         checkin.setCheckInLongitude(longitude);
         checkin.setCheckInAccuracy(accuracy);
         checkin.setStatus("ACTIVE");
+        checkin.setCheckInMethod(method);
 
-        workerCheckinRepository.save(checkin);
+        WorkerCheckinEntity saved = workerCheckinRepository.save(checkin);
         log.info("Worker {} checked in at project {}", workerId, projectId);
+        return saved;
     }
 
     /**
      * Performs worker check-out with GPS location.
      */
     @Transactional
-    public void workerCheckOut(UUID projectId, UUID workerId, BigDecimal latitude, BigDecimal longitude, BigDecimal accuracy) throws SmartRoadException {
+    public WorkerCheckinEntity workerCheckOut(UUID projectId, UUID workerId, BigDecimal latitude, BigDecimal longitude, BigDecimal accuracy, String method) throws SmartRoadException {
         LocalDate today = LocalDate.now();
         var checkin = workerCheckinRepository.findTodayActiveCheckin(projectId, workerId, today)
                 .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "checkin.not.found"));
@@ -95,12 +108,14 @@ public class TrackingService {
         checkin.setCheckOutLongitude(longitude);
         checkin.setCheckOutAccuracy(accuracy);
         checkin.setStatus("COMPLETED");
+        checkin.setCheckOutMethod(method);
 
         long durationMinutes = ChronoUnit.MINUTES.between(checkin.getCheckInTime(), checkin.getCheckOutTime());
         checkin.setDurationMinutes((int) durationMinutes);
 
-        workerCheckinRepository.save(checkin);
+        WorkerCheckinEntity saved = workerCheckinRepository.save(checkin);
         log.info("Worker {} checked out from project {} - Duration: {} minutes", workerId, projectId, durationMinutes);
+        return saved;
     }
 
     /**
