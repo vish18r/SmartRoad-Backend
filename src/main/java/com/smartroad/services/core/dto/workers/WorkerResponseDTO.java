@@ -1,8 +1,10 @@
 package com.smartroad.services.core.dto.workers;
 
+import com.smartroad.services.common.enums.workers.WageTypeEnum;
 import com.smartroad.services.common.enums.workers.WorkerFaceStatusEnum;
 import com.smartroad.services.common.enums.workers.WorkerStatusEnum;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -37,5 +39,11 @@ public record WorkerResponseDTO(
     Integer experienceYears,
     String employeeId,
     String fullName,
-    WorkerFaceStatusEnum faceStatus
+    WorkerFaceStatusEnum faceStatus,
+    WageTypeEnum wageType,
+    BigDecimal dailyWage,
+    BigDecimal monthlyWage,
+    BigDecimal overtimeRate,
+    LocalDate wageEffectiveDate,
+    Boolean wageActive
 ) {}

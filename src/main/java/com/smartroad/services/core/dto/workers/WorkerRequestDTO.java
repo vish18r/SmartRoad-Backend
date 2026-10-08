@@ -1,11 +1,14 @@
 package com.smartroad.services.core.dto.workers;
 
+import com.smartroad.services.common.enums.workers.WageTypeEnum;
 import com.smartroad.services.common.enums.workers.WorkerStatusEnum;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -64,5 +67,20 @@ public record WorkerRequestDTO(
     String emergencyContactPhone,
 
     Integer experienceYears,
-    String faceDescriptor
+    String faceDescriptor,
+
+    WageTypeEnum wageType,
+
+    @DecimalMin(value = "0", message = "{payroll.amount.invalid}")
+    BigDecimal dailyWage,
+
+    @DecimalMin(value = "0", message = "{payroll.amount.invalid}")
+    BigDecimal monthlyWage,
+
+    @DecimalMin(value = "0", message = "{payroll.amount.invalid}")
+    BigDecimal overtimeRate,
+
+    LocalDate wageEffectiveDate,
+
+    Boolean wageActive
 ) {}

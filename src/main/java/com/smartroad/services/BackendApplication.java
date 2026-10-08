@@ -35,7 +35,7 @@ public class BackendApplication implements CommandLineRunner {
      *
      * @param args command-line arguments passed to the JVM at startup
      */
-    public static voi   d main(String[] args) {
+    public static void main(String[] args) {
 
         logger.info(LINE);
         logger.info(EMPTY_LINE);

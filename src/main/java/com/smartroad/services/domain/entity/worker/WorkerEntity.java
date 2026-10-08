@@ -1,5 +1,6 @@
 package com.smartroad.services.domain.entity.worker;
 
+import com.smartroad.services.common.enums.workers.WageTypeEnum;
 import com.smartroad.services.common.enums.workers.WorkerStatusEnum;
 import com.smartroad.services.domain.entity.SmartRoadBaseEntity;
 import jakarta.persistence.Column;
@@ -16,6 +17,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -106,4 +108,23 @@ public class WorkerEntity extends SmartRoadBaseEntity {
 
     @Column(name = "is_deleted")
     private Boolean isDeleted;
+
+    @Column(name = "wage_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private WageTypeEnum wageType;
+
+    @Column(name = "daily_wage")
+    private BigDecimal dailyWage;
+
+    @Column(name = "monthly_wage")
+    private BigDecimal monthlyWage;
+
+    @Column(name = "overtime_rate")
+    private BigDecimal overtimeRate;
+
+    @Column(name = "wage_effective_date")
+    private LocalDate wageEffectiveDate;
+
+    @Column(name = "wage_active")
+    private Boolean wageActive;
 }

@@ -7,7 +7,11 @@ import com.smartroad.services.core.dto.tracking.AttendanceDTO.DailySummary;
 import com.smartroad.services.core.dto.tracking.AttendanceDTO.EventResponse;
 import com.smartroad.services.core.dto.tracking.AttendanceDTO.Position;
 import com.smartroad.services.core.dto.tracking.AttendanceDTO.Session;
+import com.smartroad.services.core.dto.shift.ShiftAttendanceInfoDTO;
+import com.smartroad.services.core.service.shift.ShiftAssignmentService;
 import com.smartroad.services.core.service.workers.WorkerService;
+import com.smartroad.services.domain.entity.shift.ShiftTemplateEntity;
+import com.smartroad.services.domain.entity.shift.WorkerShiftAssignmentEntity;
 import com.smartroad.services.domain.entity.tracking.WorkerCheckinEntity;
 import com.smartroad.services.domain.entity.worker.WorkerEntity;
 import com.smartroad.services.domain.repository.tracking.WorkerCheckinRepository;
@@ -45,6 +49,7 @@ public class AttendanceService {
     private final TrackingService trackingService;
     private final WorkerService workerService;
     private final WorkerCheckinRepository checkinRepository;
+    private final ShiftAssignmentService shiftAssignmentService;
 
     /**
      * Constructs the service with required dependencies.
@@ -52,12 +57,16 @@ public class AttendanceService {
      * @param trackingService the service that owns the check-in and check-out session rules
      * @param workerService the worker service used to identify and authorize workers
      * @param checkinRepository the check-in session repository
+     * @param shiftAssignmentService the shift assignment service, used only to additively enrich
+     *                               a day's summary with the worker's scheduled shift; it never
+     *                               participates in recording check-in/check-out sessions
      */
     public AttendanceService(TrackingService trackingService, WorkerService workerService,
-                             WorkerCheckinRepository checkinRepository) {
+                             WorkerCheckinRepository checkinRepository, ShiftAssignmentService shiftAssignmentService) {
         this.trackingService = trackingService;
         this.workerService = workerService;
         this.checkinRepository = checkinRepository;
+        this.shiftAssignmentService = shiftAssignmentService;
     }
 
     /**
@@ -312,7 +321,50 @@ public class AttendanceService {
                 s.getCheckOutTime() == null ? null : secondsBetween(s))).toList();
 
         return new DailySummary(workerId, worker == null ? null : worker.getEmployeeId(), displayName(worker), date,
-                first, last, total, formatDuration(total), status, list);
+                first, last, total, formatDuration(total), status, list, resolveShiftInfo(workerId, date, first, last, total));
+    }
+
+    /**
+     * Additively resolves the worker's scheduled shift for a date and compares it with the day's
+     * actual attendance. Purely read-only: it never changes how sessions are recorded or summed,
+     * and a worker with no shift assignment simply gets a null enrichment.
+     *
+     * @param workerId the worker UUID
+     * @param date the attendance date
+     * @param firstCheckInTime the day's earliest check-in, or null when there is none
+     * @param lastCheckOutTime the day's latest check-out, or null when no session is closed
+     * @param totalWorkSeconds the day's summed worked seconds across closed sessions
+     * @return the {@link ShiftAttendanceInfoDTO}, or null when the worker has no shift assignment
+     *         covering this date, or the assigned shift can no longer be found
+     */
+    private ShiftAttendanceInfoDTO resolveShiftInfo(UUID workerId, LocalDate date, OffsetDateTime firstCheckInTime,
+                                                    OffsetDateTime lastCheckOutTime, long totalWorkSeconds) {
+        return shiftAssignmentService.resolveActiveAssignment(workerId, date)
+                .map(WorkerShiftAssignmentEntity::getShiftId)
+                .map(shiftAssignmentService::loadShift)
+                .map(shift -> toShiftInfo(shift, firstCheckInTime, lastCheckOutTime, totalWorkSeconds))
+                .orElse(null);
+    }
+
+    /**
+     * Builds the shift enrichment once the worker's assigned shift template is known.
+     *
+     * @param shift the assigned shift template
+     * @param firstCheckInTime the day's earliest check-in, or null when there is none
+     * @param lastCheckOutTime the day's latest check-out, or null when no session is closed
+     * @param totalWorkSeconds the day's summed worked seconds across closed sessions
+     * @return the {@link ShiftAttendanceInfoDTO}
+     */
+    private ShiftAttendanceInfoDTO toShiftInfo(ShiftTemplateEntity shift, OffsetDateTime firstCheckInTime,
+                                               OffsetDateTime lastCheckOutTime, long totalWorkSeconds) {
+        boolean lateArrival = firstCheckInTime != null && firstCheckInTime.toLocalTime().isAfter(shift.getStartTime());
+        boolean earlyCheckout = lastCheckOutTime != null && lastCheckOutTime.toLocalTime().isBefore(shift.getEndTime());
+        long workedMinutes = totalWorkSeconds / 60;
+        long overtimeMinutes = Math.max(0, workedMinutes - shift.getTotalWorkingMinutes());
+
+        return new ShiftAttendanceInfoDTO(shift.getId(), shift.getShiftCode(), shift.getShiftName(),
+                shift.getStartTime(), shift.getEndTime(), shift.getTotalWorkingMinutes(),
+                lateArrival, earlyCheckout, overtimeMinutes);
     }
 
     /**

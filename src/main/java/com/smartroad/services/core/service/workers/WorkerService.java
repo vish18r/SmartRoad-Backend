@@ -1,5 +1,6 @@
 package com.smartroad.services.core.service.workers;
 
+import com.smartroad.services.common.enums.workers.WageTypeEnum;
 import com.smartroad.services.common.enums.workers.WorkerStatusEnum;
 import com.smartroad.services.common.exception.ApplicationLayer;
 import com.smartroad.services.common.enums.workers.WorkerFaceStatusEnum;
@@ -120,6 +121,7 @@ public class WorkerService {
         WorkerEntity entity = workerMapper.toWorkerEntity(request);
         entity.setIsDeleted(false);
         entity.setEmployeeId("SR" + workerRepository.nextEmployeeNumber());
+        applyWageDefaults(entity);
 
         workerRepository.save(entity);
 
@@ -564,10 +566,60 @@ public class WorkerService {
 
         workerMapper.updateWorkerEntityFromDto(request, entity);
         entity.setModifiedBy(userId);
+        applyWagePatch(entity, request);
+        applyWageDefaults(entity);
 
         workerRepository.save(entity);
 
         return workerMapper.toWorkerResponseDTO(entity);
+    }
+
+    /**
+     * Fills in a worker's wage configuration defaults. A new worker, and a worker whose wage
+     * configuration has never been set, defaults to a DAILY wage type with wage tracking active,
+     * so the NOT NULL wage_type column is always satisfied and payroll can always determine
+     * how to compute a worker's basic wage.
+     *
+     * @param entity the worker entity to default
+     */
+    private void applyWageDefaults(WorkerEntity entity) {
+        if (entity.getWageType() == null) {
+            entity.setWageType(WageTypeEnum.DAILY);
+        }
+        if (entity.getWageActive() == null) {
+            entity.setWageActive(Boolean.TRUE);
+        }
+    }
+
+    /**
+     * Applies only the wage configuration fields a caller actually supplied, leaving the
+     * worker's existing configuration untouched otherwise. {@link WorkerMapper#updateWorkerEntityFromDto}
+     * ignores these fields for exactly this reason: an update that edits unrelated worker
+     * details, such as address or status, must never silently clear a wage configuration that
+     * payroll already depends on just because the request omitted it.
+     *
+     * @param entity the worker entity being updated
+     * @param request the update request
+     */
+    private void applyWagePatch(WorkerEntity entity, WorkerRequestDTO request) {
+        if (request.wageType() != null) {
+            entity.setWageType(request.wageType());
+        }
+        if (request.dailyWage() != null) {
+            entity.setDailyWage(request.dailyWage());
+        }
+        if (request.monthlyWage() != null) {
+            entity.setMonthlyWage(request.monthlyWage());
+        }
+        if (request.overtimeRate() != null) {
+            entity.setOvertimeRate(request.overtimeRate());
+        }
+        if (request.wageEffectiveDate() != null) {
+            entity.setWageEffectiveDate(request.wageEffectiveDate());
+        }
+        if (request.wageActive() != null) {
+            entity.setWageActive(request.wageActive());
+        }
     }
 
     /**

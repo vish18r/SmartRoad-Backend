@@ -41,10 +41,20 @@ public interface WorkerMapper {
 
     /**
      * Updates a {@link WorkerEntity} with data from a {@link WorkerRequestDTO}.
+     * The wage configuration fields are mapped only when supplied (see
+     * {@code WorkerService.applyWagePatch}) so that updating unrelated worker details, such as
+     * address or status, through a request that omits them never silently clears an existing
+     * wage configuration.
      *
      * @param dto the source DTO
      * @param entity the target entity to update
      */
     @Mapping(target = "faceDescriptor", ignore = true)
+    @Mapping(target = "wageType", ignore = true)
+    @Mapping(target = "dailyWage", ignore = true)
+    @Mapping(target = "monthlyWage", ignore = true)
+    @Mapping(target = "overtimeRate", ignore = true)
+    @Mapping(target = "wageEffectiveDate", ignore = true)
+    @Mapping(target = "wageActive", ignore = true)
     void updateWorkerEntityFromDto(WorkerRequestDTO dto, @MappingTarget WorkerEntity entity);
 }

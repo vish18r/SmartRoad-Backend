@@ -1,6 +1,7 @@
 package com.smartroad.services.core.dto.tracking;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.smartroad.services.core.dto.shift.ShiftAttendanceInfoDTO;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -73,9 +74,14 @@ public class AttendanceDTO {
      * @param totalWorkDuration totalWorkSeconds as HH:mm:ss
      * @param status NOT_CHECKED_IN, CHECKED_IN (a session is open) or CHECKED_OUT
      * @param sessions every session of the day, earliest first
+     * @param shiftInfo the worker's scheduled shift for this date and how the day compared to it,
+     *                  or null when the worker holds no shift assignment covering this date. This
+     *                  is an additive enrichment resolved from shift management; it never changes
+     *                  how check-in/check-out sessions themselves are recorded or summed above.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record DailySummary(UUID workerId, String employeeId, String workerName, LocalDate attendanceDate,
                                OffsetDateTime firstCheckInTime, OffsetDateTime lastCheckOutTime, long totalWorkSeconds,
-                               String totalWorkDuration, String status, List<Session> sessions) {}
+                               String totalWorkDuration, String status, List<Session> sessions,
+                               ShiftAttendanceInfoDTO shiftInfo) {}
 }
