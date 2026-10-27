@@ -1,22 +1,30 @@
 package com.smartroad.services.core.service.dashboard;
 
+import com.smartroad.services.common.enums.stock.StockTransactionTypeEnum;
 import com.smartroad.services.common.enums.workers.AttendanceStatusEnum;
 import com.smartroad.services.common.exception.ApplicationLayer;
 import com.smartroad.services.common.exception.ErrorCodeMapping;
 import com.smartroad.services.common.exception.SmartRoadException;
+import com.smartroad.services.core.dto.dashboard.SiteActivityDTO;
 import com.smartroad.services.core.dto.dashboard.SiteDashboardResponseDTO;
+import com.smartroad.services.core.dto.dashboard.SiteDiarySummaryDTO;
 import com.smartroad.services.core.dto.dashboard.SiteMaterialsDTO;
+import com.smartroad.services.core.dto.dashboard.SiteMaterialsTodayDTO;
 import com.smartroad.services.core.dto.dashboard.SitePhotoDTO;
 import com.smartroad.services.core.dto.dashboard.SitePhotosDTO;
 import com.smartroad.services.core.dto.dashboard.SiteWorkDTO;
 import com.smartroad.services.core.dto.dashboard.SiteWorkforceDTO;
 import com.smartroad.services.core.service.organization.OrganizationService;
+import com.smartroad.services.domain.entity.material.MaterialStockLedgerEntity;
 import com.smartroad.services.domain.entity.project.ProjectEntity;
+import com.smartroad.services.domain.entity.sitediary.SiteDiaryEntity;
 import com.smartroad.services.domain.entity.tracking.WorkPhotoEntity;
 import com.smartroad.services.domain.entity.tracking.WorkerCheckinEntity;
+import com.smartroad.services.domain.repository.MaterialStockLedgerRepository;
 import com.smartroad.services.domain.repository.MaterialStockRepository;
 import com.smartroad.services.domain.repository.ProjectRepository;
 import com.smartroad.services.domain.repository.RoadRepository;
+import com.smartroad.services.domain.repository.SiteDiaryRepository;
 import com.smartroad.services.domain.repository.WorkerAttendanceRepository;
 import com.smartroad.services.domain.repository.WorkerRepository;
 import com.smartroad.services.domain.repository.tracking.WorkPhotoRepository;
@@ -27,7 +35,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -42,14 +56,17 @@ import java.util.UUID;
 public class SiteDashboardService {
 
     private static final int RECENT_PHOTO_LIMIT = 12;
+    private static final int RECENT_ACTIVITY_LIMIT = 20;
 
     private final ProjectRepository projectRepository;
     private final RoadRepository roadRepository;
     private final WorkerRepository workerRepository;
     private final WorkerAttendanceRepository attendanceRepository;
     private final MaterialStockRepository stockRepository;
+    private final MaterialStockLedgerRepository ledgerRepository;
     private final WorkPhotoRepository photoRepository;
     private final WorkerCheckinRepository checkinRepository;
+    private final SiteDiaryRepository siteDiaryRepository;
     private final OrganizationService organizationService;
 
     /**
@@ -60,8 +77,10 @@ public class SiteDashboardService {
      * @param workerRepository the worker repository
      * @param attendanceRepository the worker attendance repository
      * @param stockRepository the per-project material stock repository
+     * @param ledgerRepository the material stock ledger repository
      * @param photoRepository the site photo repository
      * @param checkinRepository the worker check-in repository
+     * @param siteDiaryRepository the site diary repository
      * @param organizationService the organization service, used to authorise the caller
      */
     public SiteDashboardService(ProjectRepository projectRepository,
@@ -69,16 +88,20 @@ public class SiteDashboardService {
                                 WorkerRepository workerRepository,
                                 WorkerAttendanceRepository attendanceRepository,
                                 MaterialStockRepository stockRepository,
+                                MaterialStockLedgerRepository ledgerRepository,
                                 WorkPhotoRepository photoRepository,
                                 WorkerCheckinRepository checkinRepository,
+                                SiteDiaryRepository siteDiaryRepository,
                                 OrganizationService organizationService) {
         this.projectRepository = projectRepository;
         this.roadRepository = roadRepository;
         this.workerRepository = workerRepository;
         this.attendanceRepository = attendanceRepository;
         this.stockRepository = stockRepository;
+        this.ledgerRepository = ledgerRepository;
         this.photoRepository = photoRepository;
         this.checkinRepository = checkinRepository;
+        this.siteDiaryRepository = siteDiaryRepository;
         this.organizationService = organizationService;
     }
 
@@ -107,7 +130,141 @@ public class SiteDashboardService {
                 buildWork(project),
                 buildWorkforce(projectId, date),
                 buildMaterials(projectId),
-                buildPhotos(projectId, date));
+                buildPhotos(projectId, date),
+                buildDiary(projectId, date),
+                buildMaterialsToday(projectId, date),
+                buildActivity(projectId, date));
+    }
+
+    /**
+     * Looks up the site diary entry for the day and maps it to its dashboard summary.
+     *
+     * @param projectId the project UUID
+     * @param date the day to report on
+     * @return the {@link SiteDiarySummaryDTO} for the day, or null when no entry exists
+     */
+    private SiteDiarySummaryDTO buildDiary(UUID projectId, LocalDate date) {
+        return siteDiaryRepository.findByProjectIdAndDiaryDate(projectId, date)
+                .map(this::toDiarySummary)
+                .orElse(null);
+    }
+
+    /**
+     * Maps a site diary entity to its dashboard summary.
+     *
+     * @param diary the site diary entity
+     * @return the diary summary DTO
+     */
+    private SiteDiarySummaryDTO toDiarySummary(SiteDiaryEntity diary) {
+        return new SiteDiarySummaryDTO(diary.getId(), diary.getDiaryDate(), diary.getWeather(),
+                diary.getTemperatureCelsius(), diary.getSiteConditions(), diary.getWorkSummary(),
+                diary.getIssues(), diary.getSafetyNotes(), diary.getNotes());
+    }
+
+    /**
+     * Sums today's material receipts and consumption for the site from the stock ledger.
+     *
+     * @param projectId the project UUID
+     * @param date the day to report on
+     * @return the {@link SiteMaterialsTodayDTO} for the day
+     */
+    private SiteMaterialsTodayDTO buildMaterialsToday(UUID projectId, LocalDate date) {
+        Date start = startOfDay(date);
+        Date end = startOfDay(date.plusDays(1));
+
+        BigDecimal received = orZero(ledgerRepository.sumQuantityByProjectIdAndTypeAndDateCreatedBetween(
+                projectId, StockTransactionTypeEnum.RECEIVED, start, end)).abs();
+        BigDecimal consumed = orZero(ledgerRepository.sumQuantityByProjectIdAndTypeAndDateCreatedBetween(
+                projectId, StockTransactionTypeEnum.CONSUMPTION, start, end)).abs();
+
+        return new SiteMaterialsTodayDTO(received, consumed);
+    }
+
+    /**
+     * Builds the site's recent-activity feed for the day by merging worker check-ins/outs,
+     * stock ledger movements, photo uploads, and the diary entry, newest first.
+     *
+     * @param projectId the project UUID
+     * @param date the day to report on
+     * @return the merged, time-descending activity feed, capped at {@link #RECENT_ACTIVITY_LIMIT}
+     */
+    private List<SiteActivityDTO> buildActivity(UUID projectId, LocalDate date) {
+        List<SiteActivityDTO> events = new ArrayList<>();
+
+        for (WorkerCheckinEntity checkin : checkinRepository.findByProjectAndDate(projectId, date)) {
+            events.add(new SiteActivityDTO("checkin-" + checkin.getId(), "CHECK_IN",
+                    "Worker checked in", checkin.getCheckInTime(), checkin.getWorkerId()));
+            if (checkin.getCheckOutTime() != null) {
+                events.add(new SiteActivityDTO("checkout-" + checkin.getId(), "CHECK_OUT",
+                        "Worker checked out", checkin.getCheckOutTime(), checkin.getWorkerId()));
+            }
+        }
+
+        Date start = startOfDay(date);
+        Date end = startOfDay(date.plusDays(1));
+        for (MaterialStockLedgerEntity entry : ledgerRepository.findByProjectIdAndDateCreatedBetween(projectId, start, end)) {
+            toLedgerActivity(entry).ifPresent(events::add);
+        }
+
+        for (WorkPhotoEntity photo : photoRepository.findByProjectAndDate(projectId, date)) {
+            events.add(new SiteActivityDTO("photo-" + photo.getId(), "PHOTO_UPLOADED",
+                    "Photo uploaded", photo.getPhotoDate(), photo.getUploadedBy()));
+        }
+
+        siteDiaryRepository.findByProjectIdAndDiaryDate(projectId, date).ifPresent(diary ->
+                events.add(new SiteActivityDTO("diary-" + diary.getId(), "DIARY_UPDATED",
+                        "Site diary updated", toOffsetDateTime(diary.getDateModified()), diary.getModifiedBy())));
+
+        return events.stream()
+                .sorted(Comparator.comparing(SiteActivityDTO::timestamp, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(RECENT_ACTIVITY_LIMIT)
+                .toList();
+    }
+
+    /**
+     * Maps one stock ledger entry to an activity feed event, when its transaction type is one
+     * the feed reports on.
+     *
+     * @param entry the ledger entry
+     * @return the mapped activity event, or empty for transaction types the feed skips
+     */
+    private Optional<SiteActivityDTO> toLedgerActivity(MaterialStockLedgerEntity entry) {
+        String type = switch (entry.getTransactionType()) {
+            case RECEIVED -> "MATERIAL_RECEIVED";
+            case CONSUMPTION -> "MATERIAL_CONSUMED";
+            case TRANSFER -> "MATERIAL_TRANSFER";
+            default -> null;
+        };
+        if (type == null) {
+            return Optional.empty();
+        }
+        String description = switch (type) {
+            case "MATERIAL_RECEIVED" -> "Material received";
+            case "MATERIAL_CONSUMED" -> "Material consumed";
+            default -> "Material transferred";
+        };
+        return Optional.of(new SiteActivityDTO("ledger-" + entry.getId(), type, description,
+                toOffsetDateTime(entry.getDateCreated()), entry.getModifiedBy()));
+    }
+
+    /**
+     * Converts a legacy {@link Date} audit timestamp to an {@link OffsetDateTime} in UTC.
+     *
+     * @param date the audit timestamp, possibly null
+     * @return the converted timestamp, or null when the input is null
+     */
+    private OffsetDateTime toOffsetDateTime(Date date) {
+        return date == null ? null : date.toInstant().atOffset(ZoneOffset.UTC);
+    }
+
+    /**
+     * Resolves the start of a calendar day as a legacy {@link Date}, in UTC, for ledger queries.
+     *
+     * @param date the calendar day
+     * @return the start of that day
+     */
+    private Date startOfDay(LocalDate date) {
+        return Date.from(date.atStartOfDay(ZoneOffset.UTC).toInstant());
     }
 
     /**

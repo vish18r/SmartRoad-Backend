@@ -5,6 +5,8 @@ import com.smartroad.services.common.enums.stock.StockTransferStatusEnum;
 import com.smartroad.services.common.exception.ApplicationLayer;
 import com.smartroad.services.common.exception.ErrorCodeMapping;
 import com.smartroad.services.common.exception.SmartRoadException;
+import com.smartroad.services.core.dto.material.MaterialConsumptionRequestDTO;
+import com.smartroad.services.core.dto.material.MaterialReceiptRequestDTO;
 import com.smartroad.services.core.dto.material.PaginationMetaDTO;
 import com.smartroad.services.core.dto.material.StockLedgerEntryResponseDTO;
 import com.smartroad.services.core.dto.material.StockLedgerPageResponseDTO;
@@ -100,6 +102,91 @@ public class StockService {
         record(userId, material.getId(), request.destinationProjectId(), quantity, reference);
 
         return toTransferResponse(transfer);
+    }
+
+    /**
+     * Records a direct material receipt onto a project's stock, crediting the project's balance and
+     * appending one RECEIVED entry to the stock ledger.
+     *
+     * @param userId the UUID of the user recording the receipt
+     * @param materialId the material UUID
+     * @param projectId the project UUID receiving the material
+     * @param quantity the quantity received, must be positive
+     * @param unitRate the optional unit rate to record against the stock, null leaves it unchanged
+     * @param referenceNumber the optional external reference for the receipt
+     * @param notes the optional notes for the receipt
+     * @return the recorded {@link StockLedgerEntryResponseDTO}
+     * @throws SmartRoadException if the material is not found or the quantity is not positive
+     */
+    @Transactional
+    public StockLedgerEntryResponseDTO recordReceipt(UUID userId, UUID materialId, UUID projectId, BigDecimal quantity,
+                                                      BigDecimal unitRate, String referenceNumber, String notes)
+            throws SmartRoadException {
+        MaterialEntity material = requireMaterial(materialId);
+        BigDecimal validQuantity = requirePositiveQuantity(quantity);
+
+        MaterialStockEntity stock = stockRepository.findByProjectIdAndMaterialId(projectId, material.getId())
+                .orElseGet(() -> MaterialStockEntity.builder()
+                        .projectId(projectId)
+                        .materialId(material.getId())
+                        .quantityAvailable(BigDecimal.ZERO)
+                        .quantityReserved(BigDecimal.ZERO)
+                        .quantityConsumed(BigDecimal.ZERO)
+                        .build());
+
+        stock.setQuantityAvailable(orZero(stock.getQuantityAvailable()).add(validQuantity));
+        if (unitRate != null) {
+            stock.setUnitRate(unitRate);
+        }
+        stock.setTotalValue(valueOf(stock));
+        stock.setModifiedBy(userId);
+        stockRepository.save(stock);
+
+        MaterialStockLedgerEntity entry = recordMovement(userId, material.getId(), projectId,
+                StockTransactionTypeEnum.RECEIVED, validQuantity, referenceNumber, notes);
+        return toLedgerResponse(entry);
+    }
+
+    /**
+     * Records direct material consumption from a project's stock, decrementing the available balance,
+     * incrementing the consumed total, and appending one CONSUMPTION entry to the stock ledger.
+     * Ledger quantity is recorded negative, so a project's net ledger sums to its true balance change.
+     *
+     * @param userId the UUID of the user recording the consumption
+     * @param materialId the material UUID
+     * @param projectId the project UUID consuming the material
+     * @param quantity the quantity consumed, must be positive
+     * @param referenceNumber the optional external reference for the consumption
+     * @param notes the optional notes for the consumption
+     * @return the recorded {@link StockLedgerEntryResponseDTO}
+     * @throws SmartRoadException if the material or stock record is not found, or the quantity is not
+     *                            positive or exceeds the available balance
+     */
+    @Transactional
+    public StockLedgerEntryResponseDTO recordConsumption(UUID userId, UUID materialId, UUID projectId,
+                                                          BigDecimal quantity, String referenceNumber, String notes)
+            throws SmartRoadException {
+        MaterialEntity material = requireMaterial(materialId);
+        BigDecimal validQuantity = requirePositiveQuantity(quantity);
+
+        MaterialStockEntity stock = stockRepository.findByProjectIdAndMaterialId(projectId, material.getId())
+                .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER,
+                        ErrorCodeMapping.DAO_NOT_FOUND, "stock.source.not.found"));
+
+        BigDecimal available = orZero(stock.getQuantityAvailable());
+        if (available.compareTo(validQuantity) < 0) {
+            throw invalid("stock.insufficient");
+        }
+
+        stock.setQuantityAvailable(available.subtract(validQuantity));
+        stock.setQuantityConsumed(orZero(stock.getQuantityConsumed()).add(validQuantity));
+        stock.setTotalValue(valueOf(stock));
+        stock.setModifiedBy(userId);
+        stockRepository.save(stock);
+
+        MaterialStockLedgerEntity entry = recordMovement(userId, material.getId(), projectId,
+                StockTransactionTypeEnum.CONSUMPTION, validQuantity.negate(), referenceNumber, notes);
+        return toLedgerResponse(entry);
     }
 
     /**
@@ -203,6 +290,33 @@ public class StockService {
                 .build();
         entry.setModifiedBy(userId);
         ledgerRepository.save(entry);
+    }
+
+    /**
+     * Appends one movement to the stock ledger with an explicit transaction type, reference, and notes.
+     *
+     * @param userId the UUID of the user performing the movement
+     * @param materialId the material UUID
+     * @param projectId the project the movement applies to
+     * @param transactionType the kind of movement being recorded
+     * @param quantity the signed quantity for the movement
+     * @param referenceNumber the optional external reference for the movement
+     * @param notes the optional notes for the movement
+     * @return the saved {@link MaterialStockLedgerEntity}
+     */
+    private MaterialStockLedgerEntity recordMovement(UUID userId, UUID materialId, UUID projectId,
+                                                      StockTransactionTypeEnum transactionType, BigDecimal quantity,
+                                                      String referenceNumber, String notes) {
+        MaterialStockLedgerEntity entry = MaterialStockLedgerEntity.builder()
+                .materialId(materialId)
+                .projectId(projectId)
+                .transactionType(transactionType)
+                .quantity(quantity)
+                .referenceNumber(referenceNumber)
+                .notes(notes)
+                .build();
+        entry.setModifiedBy(userId);
+        return ledgerRepository.save(entry);
     }
 
     /**

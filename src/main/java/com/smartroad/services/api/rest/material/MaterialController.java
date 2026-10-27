@@ -3,8 +3,11 @@ package com.smartroad.services.api.rest.material;
 import com.smartroad.services.api.utils.RequestUtil;
 import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.common.util.NextentiConstants;
+import com.smartroad.services.core.dto.material.MaterialConsumptionRequestDTO;
+import com.smartroad.services.core.dto.material.MaterialReceiptRequestDTO;
 import com.smartroad.services.core.dto.material.MaterialRequestDTO;
 import com.smartroad.services.core.dto.material.MaterialResponseDTO;
+import com.smartroad.services.core.dto.material.StockLedgerEntryResponseDTO;
 import com.smartroad.services.core.dto.material.StockLedgerPageResponseDTO;
 import com.smartroad.services.core.dto.stock.StockTransferRequestDTO;
 import com.smartroad.services.core.dto.stock.StockTransferResponseDTO;
@@ -274,6 +277,55 @@ public class MaterialController {
         StockLedgerPageResponseDTO response = stockService.getLedger(id, resolvedPage, resolvedLimit);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * Records a direct material receipt onto a project's stock and appends it to the stock ledger.
+     *
+     * @param id the material UUID
+     * @param request the material receipt request
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the recorded {@link StockLedgerEntryResponseDTO}
+     * @throws SmartRoadException if the material is not found or the quantity is not positive
+     */
+    @PostMapping(path = "/{id}/receive", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> receiveMaterial(@PathVariable UUID id,
+                                                  @RequestBody @Valid MaterialReceiptRequestDTO request,
+                                                  @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside receiveMaterial method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        StockLedgerEntryResponseDTO response = stockService.recordReceipt(userId, id, request.projectId(),
+                request.quantity(), request.unitRate(), request.referenceNumber(), request.notes());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Records direct material consumption from a project's stock and appends it to the stock ledger.
+     *
+     * @param id the material UUID
+     * @param request the material consumption request
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the recorded {@link StockLedgerEntryResponseDTO}
+     * @throws SmartRoadException if the material or stock record is not found, or the available
+     *                            balance is insufficient
+     */
+    @PostMapping(path = "/{id}/consume", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> consumeMaterial(@PathVariable UUID id,
+                                                  @RequestBody @Valid MaterialConsumptionRequestDTO request,
+                                                  @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside consumeMaterial method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        StockLedgerEntryResponseDTO response = stockService.recordConsumption(userId, id, request.projectId(),
+                request.quantity(), request.referenceNumber(), request.notes());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**

@@ -15,6 +15,7 @@ import com.smartroad.services.core.dto.auth.UserResponseDTO;
 import com.smartroad.services.core.dto.auth.ForgotPasswordRequestDTO;
 import com.smartroad.services.core.dto.auth.ResetPasswordRequestDTO;
 import com.smartroad.services.core.dto.auth.ChangePasswordRequestDTO;
+import com.smartroad.services.core.dto.auth.DeleteAccountRequestDTO;
 import com.smartroad.services.core.dto.auth.VerifyOtpRequestDTO;
 import com.smartroad.services.core.dto.auth.ResendOtpRequestDTO;
 import com.smartroad.services.domain.entity.auth.SessionEntity;
@@ -355,6 +356,39 @@ public class AuthService {
         createAuditLog(userId, userId, "PASSWORD_CHANGED", "SUCCESS");
 
         log.info("Password changed for user: {}", user.getEmailId());
+    }
+
+    /**
+     * Deactivates the authenticated user's own account after re-confirming their password.
+     * Soft-deletes the user by marking their status DELETED, revokes every active session so
+     * existing tokens stop working immediately, and records an audit log entry. The row itself
+     * is kept (not hard-deleted) so support can restore the account if the user changes their mind.
+     *
+     * @param userId the UUID of the user requesting deletion
+     * @param request the delete account request containing the confirmation password
+     * @throws SmartRoadException if the user is not found or the supplied password is incorrect
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteAccount(UUID userId, DeleteAccountRequestDTO request) throws SmartRoadException {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.DAO_NOT_FOUND, "user.not.found"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new SmartRoadException(ApplicationLayer.SERVICE_LAYER, ErrorCodeMapping.SERVICE_UNAUTHORIZED, "current.password.incorrect");
+        }
+
+        user.setStatus(UserStatusEnum.DELETED);
+        userRepository.save(user);
+
+        sessionRepository.findByUserId(userId).forEach(session -> {
+            session.setStatus(SessionStatus.REVOKED);
+            session.setRevokedAt(OffsetDateTime.now());
+            sessionRepository.save(session);
+        });
+
+        createAuditLog(userId, userId, "DELETE_ACCOUNT", "SUCCESS");
+
+        log.info("Account deleted (soft) for user: {}", userId);
     }
 
     /**

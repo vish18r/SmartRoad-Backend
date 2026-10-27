@@ -8,6 +8,7 @@ import com.smartroad.services.core.service.workers.WorkerService;
 import org.springframework.format.annotation.DateTimeFormat;
 import com.smartroad.services.api.utils.RequestUtil;
 import com.smartroad.services.common.exception.SmartRoadException;
+import com.smartroad.services.core.service.storage.FileStorageService;
 import com.smartroad.services.core.service.tracking.TrackingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +25,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -42,6 +45,7 @@ public class TrackingController {
     private final TrackingService trackingService;
     private final WorkerService workerService;
     private final AttendanceService attendanceService;
+    private final FileStorageService fileStorageService;
 
     /**
      * Records GPS location for a worker.
@@ -194,6 +198,44 @@ public class TrackingController {
         );
 
         return ResponseEntity.status(HttpStatus.OK).body("Photo uploaded");
+    }
+
+    /**
+     * Uploads a work photo file, stores it on disk, and records it against the project.
+     *
+     * @param file the uploaded image file
+     * @param projectId the project UUID the photo belongs to
+     * @param photoType the kind of photo being uploaded
+     * @param description the optional description of the photo
+     * @param workArea the optional work area the photo was taken in
+     * @param latitude the optional GPS latitude the photo was taken at
+     * @param longitude the optional GPS longitude the photo was taken at
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} containing the stored photo's URL
+     * @throws SmartRoadException if the file is empty, not an accepted image type, too large, or
+     *                            cannot be written to disk
+     */
+    @PostMapping(path = "/photo/upload-file", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Object> uploadWorkPhotoFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam UUID projectId,
+            @RequestParam String photoType,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String workArea,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude,
+            @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        log.info("--Inside uploadWorkPhotoFile method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        String storedUrl = fileStorageService.store(projectId, file);
+
+        BigDecimal lat = latitude == null ? null : BigDecimal.valueOf(latitude);
+        BigDecimal lng = longitude == null ? null : BigDecimal.valueOf(longitude);
+        trackingService.recordWorkPhoto(projectId, photoType, storedUrl, lat, lng, description, workArea, userId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(Map.of("photoUrl", storedUrl));
     }
 
     /**

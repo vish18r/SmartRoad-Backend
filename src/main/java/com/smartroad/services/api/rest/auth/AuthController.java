@@ -3,6 +3,7 @@ package com.smartroad.services.api.rest.auth;
 import com.smartroad.services.api.utils.RequestUtil;
 import com.smartroad.services.common.exception.SmartRoadException;
 import com.smartroad.services.core.dto.auth.ChangePasswordRequestDTO;
+import com.smartroad.services.core.dto.auth.DeleteAccountRequestDTO;
 import com.smartroad.services.core.dto.auth.ForgotPasswordRequestDTO;
 import com.smartroad.services.core.dto.auth.LoginRequestDTO;
 import com.smartroad.services.core.dto.auth.RefreshTokenRequestDTO;
@@ -205,6 +206,27 @@ public class AuthController {
 
         UUID userId = RequestUtil.extractUserId();
         authService.changePassword(userId, request);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    /**
+     * Deletes (deactivates) the authenticated user's own account after confirming their password.
+     *
+     * @param request the delete account request
+     * @param headers the HTTP request headers
+     * @return {@link ResponseEntity} with HTTP 200 OK
+     * @throws SmartRoadException if the password confirmation fails or the user is not found
+     */
+    @PostMapping(path = "/delete-account", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Object> deleteAccount(@RequestBody @Valid DeleteAccountRequestDTO request,
+                                                @RequestHeader HttpHeaders headers) throws SmartRoadException {
+        logger.info("--Inside deleteAccount method--");
+
+        UUID userId = RequestUtil.extractUserId();
+        authService.deleteAccount(userId, request);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
