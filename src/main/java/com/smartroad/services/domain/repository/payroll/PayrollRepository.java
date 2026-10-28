@@ -66,12 +66,12 @@ public interface PayrollRepository extends JpaRepository<PayrollEntity, UUID> {
      */
     @Query("SELECT p FROM PayrollEntity p WHERE p.organizationId = :organizationId "
             + "AND (:workerId IS NULL OR p.workerId = :workerId) "
-            + "AND (:employeeId IS NULL OR LOWER(p.employeeId) LIKE LOWER(CONCAT('%', :employeeId, '%'))) "
+            + "AND (:employeeId IS NULL OR LOWER(p.employeeId) LIKE LOWER(CONCAT('%', CAST(:employeeId AS string), '%'))) "
             + "AND (:status IS NULL OR p.status = :status) "
             + "AND (:wageType IS NULL OR p.wageType = :wageType) "
             + "AND (:startDate IS NULL OR p.payrollEndDate >= :startDate) "
             + "AND (:endDate IS NULL OR p.payrollStartDate <= :endDate) "
-            + "AND (:search IS NULL OR LOWER(p.employeeId) LIKE LOWER(CONCAT('%', :search, '%'))) "
+            + "AND (:search IS NULL OR LOWER(p.employeeId) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))) "
             + "ORDER BY p.payrollStartDate DESC")
     Page<PayrollEntity> search(@Param("organizationId") UUID organizationId, @Param("workerId") UUID workerId,
                                @Param("employeeId") String employeeId, @Param("status") PayrollStatusEnum status,

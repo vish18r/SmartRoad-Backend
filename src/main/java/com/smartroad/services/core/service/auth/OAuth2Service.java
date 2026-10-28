@@ -19,8 +19,6 @@ import com.smartroad.services.domain.repository.UserAuditLogRepository;
 import com.smartroad.services.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -45,7 +43,6 @@ public class OAuth2Service {
     private final SessionRepository sessionRepository;
     private final UserAuditLogRepository userAuditLogRepository;
     private final UserMapper userMapper;
-    private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
 
@@ -125,6 +122,56 @@ public class OAuth2Service {
         }
 
         oauthStateRepository.delete(oauthState);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getId().toString());
+        String accessToken = jwtService.generateAccessToken(userDetails);
+        String refreshToken = jwtService.generateRefreshToken(userDetails);
+
+        SessionEntity session = SessionEntity.builder()
+                .userId(user.getId())
+                .token(refreshToken)
+                .status(SessionStatus.ACTIVE)
+                .expiresAt(OffsetDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))
+                .build();
+
+        session.setCreatedBy(user.getId());
+        session.setModifiedBy(user.getId());
+
+        sessionRepository.save(session);
+
+        createAuditLog(user.getId(), user.getId(), "OAUTH_LOGIN", "SUCCESS");
+
+        UserResponseDTO userResponse = mapToUserResponse(user);
+        log.info("OAuth2 login successful for user: {}", user.getEmailId());
+
+        return AuthResponseDTO.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(jwtService.getAccessTokenExpiration() / 1000)
+                .user(userResponse)
+                .build();
+    }
+
+    /**
+     * Processes a successfully authenticated OAuth2 user (post Spring Security
+     * oauth2Login handshake) and issues application JWT tokens for them.
+     *
+     * @param email the verified email returned by the OAuth provider
+     * @param oauthSigninId the OAuth provider's unique subject/user ID
+     * @param oauthType the OAuth provider type
+     * @return AuthResponseDTO containing access token, refresh token, and user info
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public AuthResponseDTO processOAuth2Login(String email, String oauthSigninId, OAuthType oauthType) {
+        UserEntity user = userRepository.findByEmailId(email)
+                .orElse(null);
+
+        if (user == null) {
+            user = createOAuthUser(email, oauthSigninId, oauthType);
+        } else {
+            user = updateOAuthUser(user, oauthSigninId, oauthType);
+        }
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getId().toString());
         String accessToken = jwtService.generateAccessToken(userDetails);

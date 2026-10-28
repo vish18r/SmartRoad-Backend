@@ -58,8 +58,8 @@ public interface ShiftTemplateRepository extends JpaRepository<ShiftTemplateEnti
      */
     @Query("SELECT s FROM ShiftTemplateEntity s WHERE s.organizationId = :organizationId "
             + "AND (:status IS NULL OR s.status = :status) "
-            + "AND (:search IS NULL OR LOWER(s.shiftName) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "OR LOWER(s.shiftCode) LIKE LOWER(CONCAT('%', :search, '%'))) "
+            + "AND (:search IS NULL OR LOWER(s.shiftName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) "
+            + "OR LOWER(s.shiftCode) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))) "
             + "ORDER BY s.shiftName")
     Page<ShiftTemplateEntity> search(@Param("organizationId") UUID organizationId,
                                      @Param("status") ShiftStatusEnum status,
